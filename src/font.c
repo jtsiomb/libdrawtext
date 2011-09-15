@@ -155,7 +155,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 
 	FT_Set_Char_Size(fnt->face, 0, sz * 64, 72, 72);
 
-	if(!(gmap = malloc(sizeof *gmap))) {
+	if(!(gmap = calloc(1, sizeof *gmap))) {
 		return 0;
 	}
 
