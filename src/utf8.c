@@ -9,7 +9,7 @@ static const char first_mask[] = {
 	0xf,	/* three-bytes, 4 bits valid */
 	0x7		/* four-bytes, 3 bits valid */
 };
-static const char first_shift[] = { 7, 5, 4, 3 };	/* see above */
+static const char first_shift[] = { 0, 7, 5, 4, 3 };	/* see above */
 
 #define CONT_PREFIX	0x80
 #define CONT_MASK	0x3f
@@ -30,7 +30,7 @@ char *dtx_utf8_next_char(char *str)
 int dtx_utf8_char_code(const char *str)
 {
 	int i, nbytes, shift, code = 0;
-	char mask;
+	int mask;
 
 	if(!U8_IS_FIRST(*str)) {
 		return -1;
@@ -47,9 +47,10 @@ int dtx_utf8_char_code(const char *str)
 
 		code = (code << shift) | (*str++ & mask);
 		mask = 0x3f;
-		shift = i == 0 ? first_shift[nbytes] : 6;
+		shift = 6;
 	}
 
+	printf("code: %x\n", code);
 	return code;
 }
 

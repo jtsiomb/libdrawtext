@@ -32,7 +32,7 @@ static int num_quads;
 static int vattr = -1;
 static int tattr = -1;
 static unsigned int font_tex;
-static int buf_mode = DTX_LBF;
+static int buf_mode = DTX_NBF;
 
 static struct dtx_font *font;
 static int font_sz;
