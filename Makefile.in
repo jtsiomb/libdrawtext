@@ -1,0 +1,66 @@
+src = $(wildcard src/*.c)
+obj = $(src:.c=.o)
+dep = $(obj:.o=.d)
+
+abi = 0
+rev = 0
+
+name = libdrawtext
+lib_a = $(name).a
+
+ifeq ($(shell uname -s), Darwin)
+	lib_so = $(name).dylib
+	sharedopt = -dynamiclib
+
+	libgl = -framework OpenGL -lGLEW
+else
+	soname = $(name).so.$(abi)
+	lib_so = $(soname).$(rev)
+	sharedopt = -shared -Wl,-soname,$(soname)
+
+	libgl = -lGL -lGLU -lGLEW
+endif
+
+CC = gcc
+CFLAGS = -pedantic -Wall -g -fPIC $(ft2_cflags)
+LDFLAGS = $(ft2_libs) $(libgl)
+
+.PHONY: all
+all: $(lib_a) $(lib_so)
+
+$(lib_a): $(obj)
+	$(AR) rcs $@ $(obj)
+
+$(lib_so): $(obj)
+	$(CC) $(sharedopt) -o $@ $(obj) $(LDFLAGS)
+
+-include $(dep)
+
+%.d: %.c
+	@$(CPP) $(CFLAGS) -MM $< >$@
+
+
+.PHONY: clean
+clean:
+	rm -f $(obj) $(lib_a) $(lib_so)
+
+.PHONY: cleandep
+cleandep:
+	rm -f $(dep)
+
+.PHONY: install
+install: $(lib_a) $(lib_so)
+	mkdir -p $(PREFIX)/lib $(PREFIX)/include
+	cp $(lib_a) $(PREFIX)/lib/$(lib_a)
+	cp $(lib_so) $(PREFIX)/lib/$(lib_so)
+	cp src/drawtext.h $(PREFIX)/include/drawtext.h
+	rm -f $(PREFIX)/lib/$(name).so
+	cd $(PREFIX)/lib && ln -s $(lib_so) $(name).so
+
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(PREFIX)/lib/$(lib_a)
+	rm -f $(PREFIX)/lib/$(lib_so)
+	rm -f $(PREFIX)/lib/$(name).so
+	rm -f $(PREFIX)/include/drawtext.h
