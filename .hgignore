@@ -1,0 +1,6 @@
+^libdrawtext\.a$
+^libdrawtext\.so.*
+drawtext\.dylib$
+^Makefile$
+\.d$
+\.o$
