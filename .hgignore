@@ -1,6 +1,11 @@
-^libdrawtext\.a$
-^libdrawtext\.so.*
+libdrawtext\.a
+libdrawtext\.so
 drawtext\.dylib$
 ^Makefile$
 \.d$
 \.o$
+\.swp$
+\.tar.gz$
+^examples/fonts
+\.ttf$
+^examples/simple/simple$
