@@ -1,15 +1,24 @@
-fonts = fonts/FreeSerif.ttf fonts/klingon.ttf
+fonts = fonts/linux-libertine.ttf fonts/klingon.ttf fonts/sazanami-mincho.ttf
 
 .PHONY: all
 all: $(fonts)
 	cd simple; $(MAKE)
+	cd unicode; $(MAKE)
 
-fonts/FreeSerif.ttf:
+fonts/linux-libertine.ttf:
 	mkdir -p fonts
-	wget http://ftp.gnu.org/gnu/freefont/freefont-ttf-20100919.tar.gz
-	tar xzvf freefont-ttf-20100919.tar.gz
-	rm -f freefont-ttf-20100919.tar.gz
-	cp freefont-20100919/FreeSerif.ttf $@
+	wget http://downloads.sourceforge.net/project/linuxlibertine/linuxlibertine/5.1.3-2/LinLibertineTTF_5.1.3_2011_06_21.tgz
+	mkdir -p linlibertine
+	cd linlibertine; tar xzvf ../LinLibertineTTF_5.1.3_2011_06_21.tgz
+	rm -f LinLibertineTTF_5.1.3_2011_06_21.tgz
+	cp linlibertine/LinLibertine_R.ttf $@
+
+fonts/sazanami-mincho.ttf:
+	mkdir -p fonts
+	wget -O sazanami-20040629.tar.bz2 'http://sourceforge.jp/frs/redir.php?m=iij&f=/efont/10087/sazanami-20040629.tar.bz2'
+	tar xjvf sazanami-20040629.tar.bz2
+	rm -f sazanami-20040629.tar.bz2
+	cp sazanami-20040629/sazanami-mincho.ttf $@
 
 fonts/klingon.ttf:
 	mkdir -p fonts
