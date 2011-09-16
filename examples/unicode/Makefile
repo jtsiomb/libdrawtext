@@ -6,7 +6,7 @@ CFLAGS = -pedantic -Wall -g -I../../src
 LDFLAGS = -L. -ldrawtext $(libgl)
 
 lib_so = libdrawtext.so
-fonts = serif.ttf klingon.ttf
+fonts = serif.ttf cjk.ttf klingon.ttf
 
 ifeq ($(shell uname -s), Darwin)
 	libgl = -framework OpenGL -framework GLUT
@@ -21,7 +21,11 @@ $(lib_so): ../../libdrawtext.so.0.0
 	rm -f $@
 	ln -s $< $@
 
-serif.ttf: ../fonts/FreeSerif.ttf
+serif.ttf: ../fonts/linux-libertine.ttf
+	rm -f $@
+	ln -s $< $@
+
+cjk.ttf: ../fonts/sazanami-mincho.ttf
 	rm -f $@
 	ln -s $< $@
 

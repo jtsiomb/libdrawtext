@@ -49,8 +49,6 @@ int dtx_utf8_char_code(const char *str)
 		mask = 0x3f;
 		shift = 6;
 	}
-
-	printf("code: %x\n", code);
 	return code;
 }
 
