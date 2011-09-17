@@ -22,8 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <limits.h>
 #include <ctype.h>
+#include <float.h>
 #include <errno.h>
 #ifdef USE_FREETYPE
 #include <ft2build.h>
@@ -466,6 +468,152 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 	return 0;
 }
 
+
+void dtx_use_font(struct dtx_font *fnt, int sz)
+{
+	dtx_gl_init();
+
+	dtx_font = fnt;
+	dtx_font_sz = sz;
+}
+
+void dtx_glyph_box(int code, struct dtx_box *box)
+{
+	int cidx;
+	struct dtx_glyphmap *gmap;
+	gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code);
+
+	cidx = code - gmap->cstart;
+
+	box->x = gmap->glyphs[cidx].orig_x;
+	box->y = gmap->glyphs[cidx].orig_y;
+	box->width = gmap->glyphs[cidx].width;
+	box->height = gmap->glyphs[cidx].height;
+}
+
+float dtx_glyph_width(int code)
+{
+	struct dtx_box box;
+	dtx_glyph_box(code, &box);
+	return box.width;
+}
+
+float dtx_glyph_height(int code)
+{
+	struct dtx_box box;
+	dtx_glyph_box(code, &box);
+	return box.height;
+}
+
+void dtx_string_box(const char *str, struct dtx_box *box)
+{
+	int code;
+	float pos_x = 0.0f, pos_y = 0.0f;
+	struct glyph *g = 0;
+	float x0, y0, x1, y1;
+
+	x0 = y0 = FLT_MAX;
+	x1 = y1 = -FLT_MAX;
+
+	while(*str) {
+		float px, py;
+		struct dtx_glyphmap *gmap;
+
+		code = dtx_utf8_char_code(str);
+		str = dtx_utf8_next_char((char*)str);
+
+		px = pos_x;
+		py = pos_y;
+
+		if((gmap = dtx_proc_char(code, &pos_x, &pos_y))) {
+			g = gmap->glyphs + code - gmap->cstart;
+
+			if(px + g->orig_x < x0) {
+				x0 = px + g->orig_x;
+			}
+			if(py + g->orig_y < y0) {
+				y0 = py + g->orig_y;
+			}
+			if(px + g->orig_x + g->width > x1) {
+				x1 = px + g->orig_x + g->width;
+			}
+			if(py + g->orig_y + g->height > y1) {
+				y1 = py + g->orig_y + g->height;
+			}
+		}
+	}
+
+	box->x = x0;
+	box->y = y0;
+	box->width = x1 - x0;
+	box->height = y1 - y0;
+}
+
+float dtx_string_width(const char *str)
+{
+	struct dtx_box box;
+
+	dtx_string_box(str, &box);
+	return box.width;
+}
+
+float dtx_string_height(const char *str)
+{
+	struct dtx_box box;
+
+	dtx_string_box(str, &box);
+	return box.height;
+}
+
+float dtx_char_pos(const char *str, int n)
+{
+	int i;
+	float pos = 0.0;
+	struct dtx_glyphmap *gmap;
+
+	for(i=0; i<n; i++) {
+		int code = dtx_utf8_char_code(str);
+		str = dtx_utf8_next_char((char*)str);
+
+		gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code);
+		pos += gmap->glyphs[i].advance;
+	}
+	return pos;
+}
+
+
+struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos)
+{
+	struct dtx_glyphmap *gmap;
+	gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code);
+
+	switch(code) {
+	case '\n':
+		*xpos = 0.0;
+		if(gmap) {
+			*ypos -= gmap->line_advance;
+		}
+		return 0;
+
+	case '\t':
+		if(gmap) {
+			*xpos = (fmod(*xpos, 4.0) + 4.0) * gmap->glyphs[0].advance;
+		}
+		return 0;
+
+	case '\r':
+		*xpos = 0.0;
+		return 0;
+
+	default:
+		break;
+	}
+
+	if(gmap) {
+		*xpos += gmap->glyphs[code - gmap->cstart].advance;
+	}
+	return gmap;
+}
 
 static void calc_best_size(int total_width, int max_glyph_height, int padding, int pow2, int *imgw, int *imgh)
 {

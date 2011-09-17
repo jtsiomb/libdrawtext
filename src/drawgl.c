@@ -39,7 +39,6 @@ struct quad {
 	struct vertex v[6];
 };
 
-static int init(void);
 static void cleanup(void);
 static void add_glyph(struct glyph *g, float x, float y);
 
@@ -51,11 +50,8 @@ static int tattr = -1;
 static unsigned int font_tex;
 static int buf_mode = DTX_NBF;
 
-static struct dtx_font *font;
-static int font_sz;
 
-
-static int init(void)
+int dtx_gl_init(void)
 {
 	if(qbuf) {
 		return 0;	/* already initialized */
@@ -77,14 +73,6 @@ static void cleanup(void)
 	free(qbuf);
 }
 
-
-void dtx_use_font(struct dtx_font *fnt, int sz)
-{
-	init();
-
-	font = fnt;
-	font_sz = sz;
-}
 
 void dtx_vertex_attribs(int vert_attr, int tex_attr)
 {
@@ -120,7 +108,7 @@ void dtx_glyph(int code)
 {
 	struct dtx_glyphmap *gmap;
 
-	if(!font || !(gmap = dtx_get_font_glyphmap(font, font_sz, code))) {
+	if(!dtx_font || !(gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
 		return;
 	}
 	set_glyphmap_texture(gmap);
@@ -136,39 +124,27 @@ void dtx_string(const char *str)
 	float pos_x = 0.0f;
 	float pos_y = 0.0f;
 
-	if(!font) {
+	if(!dtx_font) {
 		return;
 	}
 
 	while(*str) {
+		float px, py;
 		int code = dtx_utf8_char_code(str);
 		str = dtx_utf8_next_char((char*)str);
 
-		switch(code) {
-		case '\n':
-			if(buf_mode == DTX_LBF) {
-				should_flush = 1;
-			}
-			pos_x = 0.0;
-			pos_y -= gmap->line_advance;
-			break;
+		if(buf_mode == DTX_LBF && code == '\n') {
+			should_flush = 1;
+		}
 
-		case '\t':
-			pos_x = fmod(pos_x, 4.0) + 4.0;
-			break;
+		px = pos_x;
+		py = pos_y;
 
-		case '\r':
-			pos_x = 0.0;
-			break;
+		if((gmap = dtx_proc_char(code, &pos_x, &pos_y))) {
+			int idx = code - gmap->cstart;
 
-		default:
-			if((gmap = dtx_get_font_glyphmap(font, font_sz, code))) {
-				int idx = code - gmap->cstart;
-
-				set_glyphmap_texture(gmap);
-				add_glyph(gmap->glyphs + idx, pos_x, pos_y);
-				pos_x += gmap->glyphs[idx].advance;
-			}
+			set_glyphmap_texture(gmap);
+			add_glyph(gmap->glyphs + idx, px, py);
 		}
 	}
 
