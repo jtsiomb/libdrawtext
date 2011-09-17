@@ -56,7 +56,17 @@ struct dtx_font {
 };
 
 
+struct dtx_font *dtx_font;
+int dtx_font_sz;
+
+
 #define fperror(str) \
 	fprintf(stderr, "%s: %s: %s\n", __func__, (str), strerror(errno))
+
+int dtx_gl_init(void);
+
+/* returns zero if it should NOT be printed and modifies xpos/ypos */
+/* implemented in font.c */
+struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos);
 
 #endif	/* TEXT_IMPL_H_ */
