@@ -58,12 +58,23 @@ int main(int argc, char **argv)
 }
 
 /* various UTF-8 strings */
-const char *english_text = "Hello world!";
+const char *english_text = "Hello g p world!";
 const char *greek_text = "\xce\x9a\xce\xbf\xcf\x8d\xcf\x81\xce\xb1\xcf\x83\xce\xb7";
 const char *russian_text = "\xd0\xa0\xd0\xb0\xd1\x81\xd1\x86\xd0\xb2\xd0\xb5\xd1\x82\xd0\xb0\xd0\xbb\xd0\xb8 \xd1\x8f\xd0\xb1\xd0\xbb\xd0\xbe\xd0\xbd\xd0\xb8 \xd0\xb8 \xd0\xb3\xd1\x80\xd1\x83\xd1\x88\xd0\xb8";
 const char *kanji_text = "\xe4\xb9\x97\xe4\xba\xac";
 const char *klingon_text = "\xef\xa3\xa3\xef\xa3\x9d\xef\xa3\x93\xef\xa3\x98\xef\xa3\x9d\xef\xa3\xa2\xef\xa3\xa1\xef\xa3\x9d\xef\xa3\x99";
 
+void draw_box(struct dtx_box *box)
+{
+	glBegin(GL_LINE_LOOP);
+	glColor3f(0, 1, 0);
+	glVertex2f(box->x, box->y);
+	glVertex2f(box->x + box->width, box->y);
+	glVertex2f(box->x + box->width, box->y + box->height);
+	glVertex2f(box->x, box->y + box->height);
+	glEnd();
+	glColor3f(1, 1, 1);
+}
 
 void disp(void)
 {
