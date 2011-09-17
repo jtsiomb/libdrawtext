@@ -531,14 +531,14 @@ void dtx_string_box(const char *str, struct dtx_box *box)
 			if(px + g->orig_x < x0) {
 				x0 = px + g->orig_x;
 			}
-			if(py + g->orig_y < y0) {
-				y0 = py + g->orig_y;
+			if(py - g->orig_y < y0) {
+				y0 = py - g->orig_y;
 			}
 			if(px + g->orig_x + g->width > x1) {
 				x1 = px + g->orig_x + g->width;
 			}
-			if(py + g->orig_y + g->height > y1) {
-				y1 = py + g->orig_y + g->height;
+			if(py - g->orig_y + g->height > y1) {
+				y1 = py - g->orig_y + g->height;
 			}
 		}
 	}
@@ -581,6 +581,26 @@ float dtx_char_pos(const char *str, int n)
 	return pos;
 }
 
+int dtx_char_at_pt(const char *str, float pt)
+{
+	int i;
+	float prev_pos = 0.0f, pos = 0.0f;
+	struct dtx_glyphmap *gmap;
+
+	for(i=0; *str; i++) {
+		int code = dtx_utf8_char_code(str);
+		str = dtx_utf8_next_char((char*)str);
+
+		gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code);
+		pos += gmap->glyphs[i].advance;
+
+		if(fabs(pt - prev_pos) < fabs(pt - pos)) {
+			break;
+		}
+		prev_pos = pos;
+	}
+	return i;
+}
 
 struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos)
 {

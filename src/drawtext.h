@@ -169,6 +169,8 @@ float dtx_string_height(const char *str);
  */
 float dtx_char_pos(const char *str, int n);
 
+int dtx_char_at_pt(const char *str, float pt);
+
 #ifdef __cplusplus
 }
 #endif
