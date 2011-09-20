@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 
-#if defined(__IPHONE_3_0) || defined(__IPHONE_3_2) || defined(__IPHONE_4_0)
+#ifdef TARGET_IPHONE
 #include <OpenGLES/ES2/gl.h>
 #else
 #include <GL/glew.h>

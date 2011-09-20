@@ -5,19 +5,20 @@ CC = gcc
 CFLAGS = -pedantic -Wall -g -I../../src
 LDFLAGS = -L. -ldrawtext $(libgl)
 
-lib_so = libdrawtext.so
 fonts = serif.ttf cjk.ttf klingon.ttf
 
 ifeq ($(shell uname -s), Darwin)
 	libgl = -framework OpenGL -framework GLUT
+	lib_so = libdrawtext.dylib
 else
 	libgl = -lGL -lGLU -lglut
+	lib_so = libdrawtext.so.0.0
 endif
 
 $(bin): $(obj) $(lib_so) $(fonts)
 	$(CC) -o $@ $(obj) $(LDFLAGS)
 
-$(lib_so): ../../libdrawtext.so.0.0
+$(lib_so): ../../$(lib_so)
 	rm -f $@
 	ln -s $< $@
 
