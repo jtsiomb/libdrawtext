@@ -16,6 +16,7 @@ ifeq ($(shell uname -s), Darwin)
 else
 	soname = $(name).so.$(abi)
 	lib_so = $(soname).$(rev)
+	linkname = $(name).so
 	sharedopt = -shared -Wl,-soname,$(soname)
 
 	libgl = -lGL -lGLU -lGLEW
@@ -54,8 +55,8 @@ install: $(lib_a) $(lib_so)
 	cp $(lib_a) $(PREFIX)/lib/$(lib_a)
 	cp $(lib_so) $(PREFIX)/lib/$(lib_so)
 	cp src/drawtext.h $(PREFIX)/include/drawtext.h
-	rm -f $(PREFIX)/lib/$(name).so
-	cd $(PREFIX)/lib && ln -s $(lib_so) $(name).so
+	[ -n "$(linkname)" ] && rm -f $(PREFIX)/lib/$(linkname) || true
+	[ -n "$(linkname)" ] && cd $(PREFIX)/lib && ln -s $(lib_so) $(linkname) || true
 
 
 .PHONY: uninstall
