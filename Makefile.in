@@ -23,8 +23,8 @@ else
 endif
 
 CC = gcc
-CFLAGS = -pedantic -Wall -g -fPIC $(ft2_cflags)
-LDFLAGS = $(ft2_libs) $(libgl)
+CFLAGS = -pedantic -Wall -g -fPIC -I$(PREFIX)/include $(ft2_cflags)
+LDFLAGS = -L$(PREFIX)/lib $(ft2_libs) $(libgl)
 
 .PHONY: all
 all: $(lib_a) $(lib_so)
@@ -55,13 +55,15 @@ install: $(lib_a) $(lib_so)
 	cp $(lib_a) $(PREFIX)/lib/$(lib_a)
 	cp $(lib_so) $(PREFIX)/lib/$(lib_so)
 	cp src/drawtext.h $(PREFIX)/include/drawtext.h
-	[ -n "$(linkname)" ] && rm -f $(PREFIX)/lib/$(linkname) || true
-	[ -n "$(linkname)" ] && cd $(PREFIX)/lib && ln -s $(lib_so) $(linkname) || true
+	[ -n "$(linkname)" ] && rm -f $(PREFIX)/lib/$(linkname) \
+		&& cd $(PREFIX)/lib && ln -s $(lib_so) $(linkname) \
+		&& ln -s $(lib_so) $(soname) || true
 
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(PREFIX)/lib/$(lib_a)
 	rm -f $(PREFIX)/lib/$(lib_so)
-	rm -f $(PREFIX)/lib/$(name).so
+	rm -f $(PREFIX)/lib/$(linkname)
+	rm -f $(PREFIX)/lib/$(soname)
 	rm -f $(PREFIX)/include/drawtext.h
