@@ -2,8 +2,8 @@ obj = unicode.o
 bin = unicode
 
 CC = gcc
-CFLAGS = -pedantic -Wall -g -I../../src
-LDFLAGS = -L. -ldrawtext $(libgl)
+CFLAGS = -pedantic -Wall -g -I../../src -I/usr/local/include
+LDFLAGS = -L. -L/usr/local/lib -ldrawtext $(libgl)
 
 fonts = serif.ttf cjk.ttf klingon.ttf
 

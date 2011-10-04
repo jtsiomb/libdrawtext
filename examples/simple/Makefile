@@ -2,8 +2,8 @@ obj = simple.o
 bin = simple
 
 CC = gcc
-CFLAGS = -pedantic -Wall -g -I../../src
-LDFLAGS = -L. -ldrawtext $(libgl)
+CFLAGS = -pedantic -Wall -g -I../../src -I/usr/local/include
+LDFLAGS = -L. -L/usr/local/lib -ldrawtext $(libgl)
 
 font = serif.ttf
 
