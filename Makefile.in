@@ -55,9 +55,9 @@ install: $(lib_a) $(lib_so)
 	cp $(lib_a) $(PREFIX)/lib/$(lib_a)
 	cp $(lib_so) $(PREFIX)/lib/$(lib_so)
 	cp src/drawtext.h $(PREFIX)/include/drawtext.h
-	[ -n "$(linkname)" ] && rm -f $(PREFIX)/lib/$(linkname) \
-		&& cd $(PREFIX)/lib && ln -s $(lib_so) $(linkname) \
-		&& ln -s $(lib_so) $(soname) || true
+	[ -n "$(linkname)" ] && \
+		rm -f $(PREFIX)/lib/$(linkname) $(PREFIX)/lib/$(soname) && \
+		cd $(PREFIX)/lib && ln -s $(lib_so) $(linkname) && ln -s $(lib_so) $(soname) || true
 
 
 .PHONY: uninstall
