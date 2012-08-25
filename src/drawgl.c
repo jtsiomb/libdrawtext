@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2012  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -183,8 +183,15 @@ static void add_glyph(struct glyph *g, float x, float y)
 
 void dtx_flush(void)
 {
+	int vbo;
+
 	if(!num_quads) {
 		return;
+	}
+
+	if(glBindBuffer) {
+		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 #ifndef GL_ES
@@ -241,6 +248,10 @@ void dtx_flush(void)
 #else
 	glDisable(GL_BLEND);
 #endif
+
+	if(glBindBuffer && vbo) {
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	}
 
 	num_quads = 0;
 }
