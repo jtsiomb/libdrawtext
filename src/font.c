@@ -88,6 +88,10 @@ struct dtx_font *dtx_open_font(const char *fname, int sz)
 	/* pre-create the extended ASCII range glyphmap */
 	if(sz) {
 		dtx_prepare_range(fnt, sz, 0, 256);
+
+		if(!dtx_font) {
+			dtx_use_font(fnt, sz);
+		}
 	}
 
 	return fnt;
