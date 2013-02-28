@@ -116,6 +116,8 @@ void dtx_glyph(int code);
 /* draws a utf-8 string starting at the origin. \n \r and \t are handled appropriately. */
 void dtx_string(const char *str);
 
+void dtx_printf(const char *fmt, ...);
+
 /* render any pending glyphs (see dtx_draw_buffering) */
 void dtx_flush(void);
 
