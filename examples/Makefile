@@ -12,6 +12,7 @@ fonts/linux-libertine.ttf:
 	cd linlibertine; tar xzvf ../LinLibertineTTF_5.1.3_2011_06_21.tgz
 	rm -f LinLibertineTTF_5.1.3_2011_06_21.tgz
 	cp linlibertine/LinLibertine_R.ttf $@
+	rm -rf linlibertine
 
 fonts/sazanami-mincho.ttf:
 	mkdir -p fonts
@@ -19,6 +20,7 @@ fonts/sazanami-mincho.ttf:
 	tar xjvf sazanami-20040629.tar.bz2
 	rm -f sazanami-20040629.tar.bz2
 	cp sazanami-20040629/sazanami-mincho.ttf $@
+	rm -rf sazanami-20040629
 
 fonts/klingon.ttf:
 	mkdir -p fonts
@@ -26,3 +28,4 @@ fonts/klingon.ttf:
 	unzip -o tlh_2D00_pIqaD_2D00_US.zip
 	rm -f tlh_2D00_pIqaD_2D00_US.zip
 	cp tlh-pIqaD-US/pIqaD.ttf $@
+	rm -rf tlh-pIqaD-US
