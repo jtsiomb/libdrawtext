@@ -16,10 +16,17 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #ifndef NO_OPENGL
+#include <stdarg.h>
 #include <math.h>
 #include <ctype.h>
 
 #include <stdlib.h>
+
+#ifndef _MSC_VER
+#include <alloca.h>
+#else
+#include <malloc.h>
+#endif
 
 #ifdef TARGET_IPHONE
 #include <OpenGLES/ES2/gl.h>
@@ -117,9 +124,31 @@ void dtx_glyph(int code)
 	dtx_flush();
 }
 
-void dtx_string(const char *str)
+static const char *put_char(const char *str, float *pos_x, float *pos_y, int *should_flush)
 {
 	struct dtx_glyphmap *gmap;
+	float px, py;
+	int code = dtx_utf8_char_code(str);
+	str = dtx_utf8_next_char((char*)str);
+
+	if(buf_mode == DTX_LBF && code == '\n') {
+		*should_flush = 1;
+	}
+
+	px = *pos_x;
+	py = *pos_y;
+
+	if((gmap = dtx_proc_char(code, pos_x, pos_y))) {
+		int idx = code - gmap->cstart;
+
+		set_glyphmap_texture(gmap);
+		add_glyph(gmap->glyphs + idx, px, py);
+	}
+	return str;
+}
+
+void dtx_string(const char *str)
+{
 	int should_flush = buf_mode == DTX_NBF;
 	float pos_x = 0.0f;
 	float pos_y = 0.0f;
@@ -129,28 +158,38 @@ void dtx_string(const char *str)
 	}
 
 	while(*str) {
-		float px, py;
-		int code = dtx_utf8_char_code(str);
-		str = dtx_utf8_next_char((char*)str);
-
-		if(buf_mode == DTX_LBF && code == '\n') {
-			should_flush = 1;
-		}
-
-		px = pos_x;
-		py = pos_y;
-
-		if((gmap = dtx_proc_char(code, &pos_x, &pos_y))) {
-			int idx = code - gmap->cstart;
-
-			set_glyphmap_texture(gmap);
-			add_glyph(gmap->glyphs + idx, px, py);
-		}
+		str = put_char(str, &pos_x, &pos_y, &should_flush);
 	}
 
 	if(should_flush) {
 		dtx_flush();
 	}
+}
+
+void dtx_printf(const char *fmt, ...)
+{
+	va_list ap;
+	int buf_size;
+	char *buf, tmp;
+
+	if(!dtx_font) {
+		return;
+	}
+
+	va_start(ap, fmt);
+	buf_size = vsnprintf(&tmp, 0, fmt, ap);
+	va_end(ap);
+
+	if(buf_size == -1) {
+		buf_size = 512;
+	}
+
+	buf = alloca(buf_size + 1);
+	va_start(ap, fmt);
+	vsnprintf(buf, buf_size + 1, fmt, ap);
+	va_end(ap);
+
+	dtx_string(buf);
 }
 
 static void qvertex(struct vertex *v, float x, float y, float s, float t)
