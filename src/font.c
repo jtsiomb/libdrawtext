@@ -331,12 +331,12 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 
 		if(line[0] == '#') {
 			struct glyph *g;
-			int c;
-			float x, y, xsz, ysz, res;
+			int c, res;
+			float x, y, xsz, ysz;
 
 			res = sscanf(line + 1, "%d: %fx%f+%f+%f\n", &c, &xsz, &ysz, &x, &y);
 			if(res != 5) {
-				fprintf(stderr, "%s: invalid glyph info line\n", __func__);
+				fprintf(stderr, "%s: invalid glyph info line\n", __FUNCTION__);
 				goto err;
 			}
 
@@ -362,14 +362,14 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 			switch(hdr_lines) {
 			case 0:
 				if(0[line] != 'P' || 1[line] != '6') {
-					fprintf(stderr, "%s: invalid file format (magic)\n", __func__);
+					fprintf(stderr, "%s: invalid file format (magic)\n", __FUNCTION__);
 					goto err;
 				}
 				break;
 
 			case 1:
 				if(sscanf(line, "%d %d", &gmap->xsz, &gmap->ysz) != 2) {
-					fprintf(stderr, "%s: invalid file format (dim)\n", __func__);
+					fprintf(stderr, "%s: invalid file format (dim)\n", __FUNCTION__);
 					goto err;
 				}
 				break;
@@ -379,7 +379,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 					char *endp;
 					max_pixval = strtol(line, &endp, 10);
 					if(endp == line) {
-						fprintf(stderr, "%s: invalid file format (maxval)\n", __func__);
+						fprintf(stderr, "%s: invalid file format (maxval)\n", __FUNCTION__);
 						goto err;
 					}
 				}
@@ -442,7 +442,7 @@ int dtx_save_glyphmap(const char *fname, const struct dtx_glyphmap *gmap)
 	int res;
 
 	if(!(fp = fopen(fname, "wb"))) {
-		fprintf(stderr, "%s: failed to open file: %s: %s\n", __func__, fname, strerror(errno));
+		fprintf(stderr, "%s: failed to open file: %s: %s\n", __FUNCTION__, fname, strerror(errno));
 		return -1;
 	}
 	res = dtx_save_glyphmap_stream(fp, gmap);
