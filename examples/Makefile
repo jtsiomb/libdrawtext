@@ -2,8 +2,9 @@ fonts = fonts/linux-libertine.ttf fonts/klingon.ttf fonts/sazanami-mincho.ttf
 
 .PHONY: all
 all: $(fonts)
-	cd simple; $(MAKE)
-	cd unicode; $(MAKE)
+	$(MAKE) -C simple
+	$(MAKE) -C unicode
+	$(MAKE) -C nofreetype
 
 fonts/linux-libertine.ttf:
 	mkdir -p fonts
