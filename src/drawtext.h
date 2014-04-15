@@ -50,6 +50,11 @@ extern "C" {
  * nothing will be rendered.
  */
 struct dtx_font *dtx_open_font(const char *fname, int sz);
+/* open a font by loading a precompiled glyphmap (see: dtx_save_glyphmap)
+ * this works even when compiled without freetype support
+ */
+struct dtx_font *dtx_open_font_glyphmap(const char *fname);
+/* close a font opened by either of the above */
 void dtx_close_font(struct dtx_font *fnt);
 
 /* prepare an ASCII glyphmap for the specified font size */
@@ -89,6 +94,8 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp);
 int dtx_save_glyphmap(const char *fname, const struct dtx_glyphmap *gmap);
 int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap);
 
+/* adds a glyphmap to a font */
+void dtx_add_glyphmap(struct dtx_font *fnt, struct dtx_glyphmap *gmap);
 
 /* ---- rendering ---- */
 

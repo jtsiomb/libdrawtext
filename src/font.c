@@ -68,11 +68,13 @@ static void cleanup(void)
 		FT_Done_FreeType(ft);
 	}
 }
+#endif	/* USE_FREETYPE */
 
 struct dtx_font *dtx_open_font(const char *fname, int sz)
 {
-	struct dtx_font *fnt;
+	struct dtx_font *fnt = 0;
 
+#ifdef USE_FREETYPE
 	init_freetype();
 
 	if(!(fnt = calloc(1, sizeof *fnt))) {
@@ -93,7 +95,31 @@ struct dtx_font *dtx_open_font(const char *fname, int sz)
 			dtx_use_font(fnt, sz);
 		}
 	}
+#else
+	fprintf(stderr, "ignoring call to dtx_open_font: not compiled with freetype support!\n");
+#endif
 
+	return fnt;
+}
+
+struct dtx_font *dtx_open_font_glyphmap(const char *fname)
+{
+	struct dtx_font *fnt;
+	struct dtx_glyphmap *gmap;
+
+	if(!(fnt = calloc(1, sizeof *fnt))) {
+		fperror("failed to allocate font structure");
+		return 0;
+	}
+
+	if(fname) {
+		if(!(gmap = dtx_load_glyphmap(fname))) {
+			free(fnt);
+			return 0;
+		}
+
+		dtx_add_glyphmap(fnt, gmap);
+	}
 	return fnt;
 }
 
@@ -101,7 +127,9 @@ void dtx_close_font(struct dtx_font *fnt)
 {
 	if(!fnt) return;
 
+#ifdef USE_FREETYPE
 	FT_Done_Face(fnt->face);
+#endif
 
 	/* destroy the glyphmaps */
 	while(fnt->gmaps) {
@@ -115,12 +143,16 @@ void dtx_close_font(struct dtx_font *fnt)
 
 void dtx_prepare(struct dtx_font *fnt, int sz)
 {
-	dtx_get_font_glyphmap_range(fnt, sz, 0, 256);
+	if(!dtx_get_font_glyphmap_range(fnt, sz, 0, 256)) {
+		fprintf(stderr, "%s: failed (sz: %d, range: 0-255 [ascii])\n", __FUNCTION__, sz);
+	}
 }
 
 void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend)
 {
-	dtx_get_font_glyphmap_range(fnt, sz, cstart, cend);
+	if(!dtx_get_font_glyphmap_range(fnt, sz, cstart, cend)) {
+		fprintf(stderr, "%s: failed (sz: %d, range: %d-%d)\n", __FUNCTION__, sz, cstart, cend);
+	}
 }
 
 struct dtx_glyphmap *dtx_get_font_glyphmap(struct dtx_font *fnt, int sz, int code)
@@ -168,8 +200,10 @@ struct dtx_glyphmap *dtx_get_font_glyphmap_range(struct dtx_font *fnt, int sz, i
 
 struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int cstart, int cend)
 {
+	struct dtx_glyphmap *gmap = 0;
+
+#ifdef USE_FREETYPE
 	FT_Face face = fnt->face;
-	struct dtx_glyphmap *gmap;
 	int i, j;
 	int gx, gy;
 	int padding = 4;
@@ -259,12 +293,11 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	}
 
 	/* add it to the glyphmaps list of the font */
-	gmap->next = fnt->gmaps;
-	fnt->gmaps = gmap;
+	dtx_add_glyphmap(fnt, gmap);
+#endif	/* USE_FREETYPE */
 
 	return gmap;
 }
-#endif	/* USE_FREETYPE */
 
 void dtx_free_glyphmap(struct dtx_glyphmap *gmap)
 {
@@ -309,6 +342,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 	int hdr_lines = 0;
 	struct dtx_glyphmap *gmap;
 	struct glyph *glyphs = 0;
+	struct glyph *g;
 	int min_code = INT_MAX;
 	int max_code = INT_MIN;
 	int i, max_pixval, num_pixels;
@@ -317,6 +351,8 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 		fperror("failed to allocate glyphmap");
 		return 0;
 	}
+	gmap->ptsize = -1;
+	gmap->line_advance = FLT_MIN;
 
 	while(hdr_lines < 3) {
 		char *line = buf;
@@ -330,34 +366,47 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 		}
 
 		if(line[0] == '#') {
-			struct glyph *g;
 			int c, res;
-			float x, y, xsz, ysz;
+			float x, y, xsz, ysz, orig_x, orig_y, adv, line_adv;
+			int ptsize;
 
-			res = sscanf(line + 1, "%d: %fx%f+%f+%f\n", &c, &xsz, &ysz, &x, &y);
-			if(res != 5) {
+			if((res = sscanf(line + 1, " size: %d\n", &ptsize)) == 1) {
+				gmap->ptsize = ptsize;
+
+			} else if((res = sscanf(line + 1, " advance: %f\n", &line_adv)) == 1) {
+				gmap->line_advance = line_adv;
+
+			} else if((res = sscanf(line + 1, " %d: %fx%f+%f+%f o:%f,%f adv:%f\n",
+							&c, &xsz, &ysz, &x, &y, &orig_x, &orig_y, &adv)) == 8) {
+				if(!(g = malloc(sizeof *g))) {
+					fperror("failed to allocate glyph");
+					goto err;
+				}
+				g->code = c;
+				g->x = x;
+				g->y = y;
+				g->width = xsz;
+				g->height = ysz;
+				g->orig_x = orig_x;
+				g->orig_y = orig_y;
+				g->advance = adv;
+				/* normalized coordinates will be precalculated after everything is loaded */
+
+				g->next = glyphs;
+				glyphs = g;
+
+				if(c < min_code) {
+					min_code = c;
+				}
+				if(c > max_code) {
+					max_code = c;
+				}
+
+			} else {
 				fprintf(stderr, "%s: invalid glyph info line\n", __FUNCTION__);
 				goto err;
 			}
 
-			if(!(g = malloc(sizeof *g))) {
-				fperror("failed to allocate glyph");
-				goto err;
-			}
-			g->code = c;
-			g->x = x;
-			g->y = y;
-			g->width = xsz;
-			g->height = ysz;
-			g->next = glyphs;
-			glyphs = g;
-
-			if(c < min_code) {
-				min_code = c;
-			}
-			if(c > max_code) {
-				max_code = c;
-			}
 		} else {
 			switch(hdr_lines) {
 			case 0:
@@ -390,6 +439,21 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 			}
 			hdr_lines++;
 		}
+	}
+
+	if(gmap->ptsize == -1 || gmap->line_advance == FLT_MIN) {
+		fprintf(stderr, "%s: invalid glyphmap, insufficient information in ppm comments\n", __FUNCTION__);
+		goto err;
+	}
+
+	/* precalculate normalized glyph coordinates */
+	g = glyphs;
+	while(g) {
+		g->nx = g->x / gmap->xsz;
+		g->ny = g->y / gmap->ysz;
+		g->nwidth = g->width / gmap->xsz;
+		g->nheight = g->height / gmap->ysz;
+		g = g->next;
 	}
 
 	num_pixels = gmap->xsz * gmap->ysz;
@@ -456,8 +520,11 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 	struct glyph *g = gmap->glyphs;
 
 	fprintf(fp, "P6\n%d %d\n", gmap->xsz, gmap->ysz);
+	fprintf(fp, "# size: %d\n", gmap->ptsize);
+	fprintf(fp, "# advance: %g\n", gmap->line_advance);
 	for(i=0; i<gmap->crange; i++) {
-		fprintf(fp, "# %d: %fx%f+%f+%f\n", g->code, g->width, g->height, g->x, g->y);
+		fprintf(fp, "# %d: %gx%g+%g+%g o:%g,%g adv:%g\n", g->code, g->width, g->height, g->x, g->y,
+				g->orig_x, g->orig_y, g->advance);
 		g++;
 	}
 	fprintf(fp, "255\n");
@@ -470,6 +537,12 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 		fputc(c, fp);
 	}
 	return 0;
+}
+
+void dtx_add_glyphmap(struct dtx_font *fnt, struct dtx_glyphmap *gmap)
+{
+	gmap->next = fnt->gmaps;
+	fnt->gmaps = gmap;
 }
 
 
@@ -646,6 +719,7 @@ struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos)
 	return gmap;
 }
 
+#ifdef USE_FREETYPE
 static void calc_best_size(int total_width, int max_glyph_height, int padding, int pow2, int *imgw, int *imgh)
 {
 	int xsz, ysz, num_rows;
@@ -687,3 +761,4 @@ static int next_pow2(int x)
 	x = (x >> 16) | x;
 	return x + 1;
 }
+#endif
