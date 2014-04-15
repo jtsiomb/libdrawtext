@@ -1,4 +1,9 @@
-/* Simple libdrawtext example without freetype.
+/* The "simple" example, modified to use a pre-built glyphmap instead of using freetype.
+ * This can be used when using libdrawtext-noft (built without freetype support/dependency).
+ *
+ * There is only one difference between this, and the regular usage demonstrated in
+ * examples/simple, and it's marked with an XXX comment in the code. For the rest of
+ * the details of libdrawtext usage in this code, refer to examples/simple/simple.c.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +33,10 @@ int main(int argc, char **argv)
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyb);
 
+	/* XXX: only difference is that we have to call dtx_open_font_glyphmap,
+	 * instead of dtx_open_font, passing it the filename of a pre-built
+	 * glyphmap (see tools/font2glyphmap).
+	 */
 	if(!(font = dtx_open_font_glyphmap("serif_s24.glyphmap"))) {
 		fprintf(stderr, "failed to open font\n");
 		return 1;
@@ -52,9 +61,6 @@ void disp(void)
 	glPushMatrix();
 	glTranslatef(-200, 150, 0);
 	glColor3f(1, 1, 1);
-	/* XXX call dtx_string to draw utf-8 text.
-	 * any transformations and the current color apply
-	 */
 	dtx_string(text);
 	glPopMatrix();
 
