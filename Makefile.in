@@ -5,7 +5,6 @@ dep = $(obj:.o=.d)
 abi = 0
 rev = 0
 
-name = libdrawtext
 lib_a = $(name).a
 
 ifeq ($(shell uname -s), Darwin)
@@ -40,6 +39,9 @@ $(lib_so): $(obj)
 %.d: %.c
 	@$(CPP) $(CFLAGS) -MM $< >$@
 
+.PHONY: cleanobj
+cleanobj:
+	rm -f $(obj)
 
 .PHONY: clean
 clean:
@@ -67,3 +69,23 @@ uninstall:
 	rm -f $(PREFIX)/lib/$(linkname)
 	rm -f $(PREFIX)/lib/$(soname)
 	rm -f $(PREFIX)/include/drawtext.h
+
+
+.PHONY: both
+both:
+	./configure --disable-freetype
+	$(MAKE) cleanobj
+	$(MAKE)
+	./configure --enable-freetype
+	$(MAKE) cleanobj
+	$(MAKE)
+
+.PHONY: both-install
+both-install:
+	./configure --disable-freetype
+	$(MAKE) cleanobj
+	$(MAKE) install
+	./configure --enable-freetype
+	$(MAKE) cleanobj
+	$(MAKE) install
+	$(MAKE) cleanobj
