@@ -82,7 +82,7 @@ int dtx_get_glyphmap_width(struct dtx_glyphmap *gmap);
 int dtx_get_glyphmap_height(struct dtx_glyphmap *gmap);
 
 /* The following functions can be used even when the library is compiled without
- * freetype support. (TODO)
+ * freetype support.
  */
 struct dtx_glyphmap *dtx_load_glyphmap(const char *fname);
 struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp);
