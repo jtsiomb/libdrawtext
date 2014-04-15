@@ -1,16 +1,16 @@
-libdrawtext - 0.1
+libdrawtext - 0.2
 -----------------
 
 Libdrawtext is a simple library for fast anti-aliased text rendering in OpenGL.
 
-Copyright (C) 2011-2012 John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2014 John Tsiombikas <nuclear@member.fsf.org>
 You may freely use, modify and/or redistribute libdrawtext, under the terms of
 the GNU Lesser General Public License (LGPL) version 3 (or at your option, any
 later version published by the Free Software Foundation). See COPYING, and
 COPYING.LESSER for details.
 
 Canonical url: http://nuclear.mutantstargoat.com/sw/libdrawtext
-Mercurial repository: https://nuclear.mutantstargoat.com/hg/libdrawtext
+Mercurial repository: http://nuclear.mutantstargoat.com/hg/libdrawtext
 
 Feel free to send in bug reports, patches, and other comments to
 nuclear@member.fsf.org
