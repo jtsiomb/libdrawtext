@@ -12,7 +12,7 @@ ifeq ($(shell uname -s), Darwin)
 	lib_so = libdrawtext.dylib
 else
 	libgl = -lGL -lGLU -lglut
-	lib_so = libdrawtext.so.0.0
+	lib_so = libdrawtext.so.0.2
 endif
 
 $(bin): $(obj) $(lib_so) $(fonts)

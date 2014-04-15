@@ -12,7 +12,7 @@ ifeq ($(shell uname -s), Darwin)
 	lib_so = libdrawtext-noft.dylib
 else
 	libgl = -lGL -lGLU -lglut
-	lib_so = libdrawtext-noft.so.0.0
+	lib_so = libdrawtext-noft.so.0.2
 	lib_soname = libdrawtext-noft.so.0
 endif
 
