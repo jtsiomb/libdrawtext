@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 				struct coderange *node;
 				int start, end;
 
-				if(sscanf(argv[++i], "%d-%d", &start, &end) != 2) {
+				if(sscanf(argv[++i], "%i-%i", &start, &end) != 2) {
 					fprintf(stderr, "-range must be followed by a range of the form: START-END\n");
 					return 1;
 				}
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 					struct coderange *r = clist;
 					clist = clist->next;
 
-					sprintf(outfile, "%s_s%d_r%d-%d.%s", basename, font_size, r->start, r->end, SUFFIX);
+					sprintf(outfile, "%s_s%d_r%04x-%04x.%s", basename, font_size, r->start, r->end, SUFFIX);
 					font2glyphmap(font, argv[i], outfile, font_size, r->start, r->end);
 
 					free(r);
