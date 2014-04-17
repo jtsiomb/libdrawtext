@@ -42,7 +42,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static int init_freetype(void);
 static void cleanup(void);
 
-static void calc_best_size(int total_width, int max_glyph_height, int padding, int pow2, int *imgw, int *imgh);
+static void calc_best_size(int total_width, int max_gwidth, int max_gheight,
+		int padding, int pow2, int *imgw, int *imgh);
 static int next_pow2(int x);
 
 static FT_Library ft;
@@ -207,8 +208,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	int i, j;
 	int gx, gy;
 	int padding = 4;
-	int total_width = padding;
-	int max_height = 0;
+	int total_width, max_width, max_height;
 
 	FT_Set_Char_Size(fnt->face, 0, sz * 64, 72, 72);
 
@@ -227,19 +227,23 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		return 0;
 	}
 
+	total_width = padding;
+	max_width = max_height = 0;
+
 	for(i=0; i<gmap->crange; i++) {
-		int h;
+		int w, h;
 
 		FT_Load_Char(face, i + cstart, 0);
+		w = FTSZ_TO_PIXELS(face->glyph->metrics.width);
 		h = FTSZ_TO_PIXELS(face->glyph->metrics.height);
 
-		if(h > max_height) {
-			max_height = h;
-		}
-		total_width += FTSZ_TO_PIXELS(face->glyph->metrics.width) + padding;
+		if(w > max_width) max_width = w;
+		if(h > max_height) max_height = h;
+
+		total_width += w + padding;
 	}
 
-	calc_best_size(total_width, max_height, padding, 1, &gmap->xsz, &gmap->ysz);
+	calc_best_size(total_width, max_width, max_height, padding, 1, &gmap->xsz, &gmap->ysz);
 
 	if(!(gmap->pixels = malloc(gmap->xsz * gmap->ysz))) {
 		free(gmap->glyphs);
@@ -720,7 +724,7 @@ struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos)
 }
 
 #ifdef USE_FREETYPE
-static void calc_best_size(int total_width, int max_glyph_height, int padding, int pow2, int *imgw, int *imgh)
+static void calc_best_size(int total_width, int max_gwidth, int max_gheight, int padding, int pow2, int *imgw, int *imgh)
 {
 	int xsz, ysz, num_rows;
 	float aspect;
@@ -728,10 +732,11 @@ static void calc_best_size(int total_width, int max_glyph_height, int padding, i
 	for(xsz=2; xsz<=MAX_IMG_WIDTH; xsz *= 2) {
 		num_rows = total_width / xsz + 1;
 
-		/* take into account the one extra padding for each row after the first */
-		num_rows = (total_width + padding * (num_rows - 1)) / xsz + 1;
+		/* assume worst case, all last glyphs will float to the next line
+		 * so let's add extra rows for that. */
+		num_rows += (padding + (max_gwidth + padding) * num_rows + xsz - 1) / xsz;
 
-		ysz = num_rows * (max_glyph_height + padding) + padding;
+		ysz = num_rows * (max_gheight + padding) + padding;
 		if(pow2) {
 			ysz = next_pow2(ysz);
 		}
