@@ -11,7 +11,7 @@ COPYING.LESSER for details.
 
 website: http://nuclear.mutantstargoat.com/sw/libdrawtext
 
-master repository (mercurial): http://nuclear.mutantstargoat.com/hg/libdrawtext
+master repository (hg): http://nuclear.mutantstargoat.com/hg/libdrawtext
 mirror repository (git): https://github.com/jtsiomb/libdrawtext.git
 
 Feel free to send in bug reports, patches, and other comments to
