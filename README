@@ -1,5 +1,5 @@
-libdrawtext - 0.2
------------------
+libdrawtext - 0.2.1
+-------------------
 
 Libdrawtext is a simple library for fast anti-aliased text rendering in OpenGL.
 
