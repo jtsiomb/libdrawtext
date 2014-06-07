@@ -332,7 +332,7 @@ struct dtx_glyphmap *dtx_load_glyphmap(const char *fname)
 	FILE *fp;
 	struct dtx_glyphmap *gmap;
 
-	if(!(fp = fopen(fname, "r"))) {
+	if(!(fp = fopen(fname, "rb"))) {
 		return 0;
 	}
 	gmap = dtx_load_glyphmap_stream(fp);
