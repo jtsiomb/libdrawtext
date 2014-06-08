@@ -120,6 +120,10 @@ struct dtx_font *dtx_open_font_glyphmap(const char *fname)
 		}
 
 		dtx_add_glyphmap(fnt, gmap);
+
+		if(!dtx_font) {
+			dtx_use_font(fnt, gmap->ptsize);
+		}
 	}
 	return fnt;
 }
