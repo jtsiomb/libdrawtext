@@ -4,17 +4,19 @@
 #include "drawtext.h"
 
 #define SUFFIX	"glyphmap"
+#define DEF_SIZE	12
 
 struct coderange {
 	int start, end;
 	struct coderange *next;
 };
 
+void print_usage(const char *argv0);
 int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend);
 
 int main(int argc, char **argv)
 {
-	int i, font_size = 12, suffix_len = strlen(SUFFIX);
+	int i, font_size = DEF_SIZE, suffix_len = strlen(SUFFIX);
 	struct coderange *clist = 0;
 
 	for(i=1; i<argc; i++) {
@@ -45,11 +47,14 @@ int main(int argc, char **argv)
 					return 1;
 				}
 			} else {
-				fprintf(stderr, "invalid option: %s\n", argv[i]);
+				if(strcmp(argv[i], "-help") != 0 && strcmp(argv[i], "-h") != 0) {
+					fprintf(stderr, "invalid option: %s\n", argv[i]);
+				}
+				print_usage(argv[0]);
 				return 1;
 			}
 		} else {
-			char *basename, *dotptr, *outfile;
+			char *basename, *dotptr, *outfile, *lastslash;
 			struct dtx_font *font;
 
 			if(!(font = dtx_open_font(argv[i], clist ? 0 : font_size))) {
@@ -62,6 +67,9 @@ int main(int argc, char **argv)
 
 			if((dotptr = strrchr(basename, '.'))) {
 				*dotptr = 0;
+			}
+			if((lastslash = strrchr(basename, '/'))) {
+				basename = lastslash + 1;
 			}
 
 			outfile = alloca(strlen(basename) + 64);
@@ -85,6 +93,15 @@ int main(int argc, char **argv)
 	}
 
 	return 0;
+}
+
+void print_usage(const char *argv0)
+{
+	printf("usage: %s [options] <font-1> [<font-2> ... <font-n>]\n", argv0);
+	printf("options:\n");
+	printf("  -size <pt>: point size (default: %d)\n", DEF_SIZE);
+	printf("  -range <low>-<high>: unicode range (default: ascii)\n");
+	printf("  -help: print usage information and exit\n");
 }
 
 int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend)
