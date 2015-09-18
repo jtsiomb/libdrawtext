@@ -169,6 +169,14 @@ void dtx_string(const char *str)
 void dtx_printf(const char *fmt, ...)
 {
 	va_list ap;
+
+	va_start(ap, fmt);
+	dtx_vprintf(fmt, ap);
+	va_end(ap);
+}
+
+void dtx_vprintf(const char *fmt, va_list ap)
+{
 	int buf_size;
 	char *buf, tmp;
 
@@ -176,9 +184,7 @@ void dtx_printf(const char *fmt, ...)
 		return;
 	}
 
-	va_start(ap, fmt);
 	buf_size = vsnprintf(&tmp, 0, fmt, ap);
-	va_end(ap);
 
 	if(buf_size == -1) {
 		buf_size = 512;
