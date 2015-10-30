@@ -149,14 +149,14 @@ void dtx_close_font(struct dtx_font *fnt)
 void dtx_prepare(struct dtx_font *fnt, int sz)
 {
 	if(!dtx_get_font_glyphmap_range(fnt, sz, 0, 256)) {
-		fprintf(stderr, "%s: failed (sz: %d, range: 0-255 [ascii])\n", __FUNCTION__, sz);
+		fprintf(stderr, "%s: failed (sz: %d, range: 0-255 [ascii])\n", __func__, sz);
 	}
 }
 
 void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend)
 {
 	if(!dtx_get_font_glyphmap_range(fnt, sz, cstart, cend)) {
-		fprintf(stderr, "%s: failed (sz: %d, range: %d-%d)\n", __FUNCTION__, sz, cstart, cend);
+		fprintf(stderr, "%s: failed (sz: %d, range: %d-%d)\n", __func__, sz, cstart, cend);
 	}
 }
 
@@ -411,7 +411,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 				}
 
 			} else {
-				fprintf(stderr, "%s: invalid glyph info line\n", __FUNCTION__);
+				fprintf(stderr, "%s: invalid glyph info line\n", __func__);
 				goto err;
 			}
 
@@ -419,14 +419,14 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 			switch(hdr_lines) {
 			case 0:
 				if(0[line] != 'P' || 1[line] != '6') {
-					fprintf(stderr, "%s: invalid file format (magic)\n", __FUNCTION__);
+					fprintf(stderr, "%s: invalid file format (magic)\n", __func__);
 					goto err;
 				}
 				break;
 
 			case 1:
 				if(sscanf(line, "%d %d", &gmap->xsz, &gmap->ysz) != 2) {
-					fprintf(stderr, "%s: invalid file format (dim)\n", __FUNCTION__);
+					fprintf(stderr, "%s: invalid file format (dim)\n", __func__);
 					goto err;
 				}
 				break;
@@ -436,7 +436,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 					char *endp;
 					max_pixval = strtol(line, &endp, 10);
 					if(endp == line) {
-						fprintf(stderr, "%s: invalid file format (maxval)\n", __FUNCTION__);
+						fprintf(stderr, "%s: invalid file format (maxval)\n", __func__);
 						goto err;
 					}
 				}
@@ -450,7 +450,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 	}
 
 	if(gmap->ptsize == -1 || gmap->line_advance == FLT_MIN) {
-		fprintf(stderr, "%s: invalid glyphmap, insufficient information in ppm comments\n", __FUNCTION__);
+		fprintf(stderr, "%s: invalid glyphmap, insufficient information in ppm comments\n", __func__);
 		goto err;
 	}
 
@@ -514,7 +514,7 @@ int dtx_save_glyphmap(const char *fname, const struct dtx_glyphmap *gmap)
 	int res;
 
 	if(!(fp = fopen(fname, "wb"))) {
-		fprintf(stderr, "%s: failed to open file: %s: %s\n", __FUNCTION__, fname, strerror(errno));
+		fprintf(stderr, "%s: failed to open file: %s: %s\n", __func__, fname, strerror(errno));
 		return -1;
 	}
 	res = dtx_save_glyphmap_stream(fp, gmap);

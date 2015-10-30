@@ -61,7 +61,7 @@ int dtx_font_sz;
 
 
 #define fperror(str) \
-	fprintf(stderr, "%s: %s: %s\n", __FUNCTION__, (str), strerror(errno))
+	fprintf(stderr, "%s: %s: %s\n", __func__, (str), strerror(errno))
 
 int dtx_gl_init(void);
 
