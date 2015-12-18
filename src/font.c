@@ -277,7 +277,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		src = glyph->bitmap.buffer;
 		dst = gmap->pixels + gy * gmap->xsz + gx;
 
-		for(j=0; j<glyph->bitmap.rows; j++) {
+		for(j=0; j<(int)glyph->bitmap.rows; j++) {
 			memcpy(dst, src, glyph->bitmap.width);
 			dst += gmap->xsz;
 			src += glyph->bitmap.pitch;

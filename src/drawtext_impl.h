@@ -63,6 +63,10 @@ int dtx_font_sz;
 #define fperror(str) \
 	fprintf(stderr, "%s: %s: %s\n", __func__, (str), strerror(errno))
 
+#ifdef _MSC_VER
+#define __func__	__FUNCTION__
+#endif
+
 int dtx_gl_init(void);
 
 /* returns zero if it should NOT be printed and modifies xpos/ypos */
