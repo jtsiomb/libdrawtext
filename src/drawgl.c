@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2012  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -19,14 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdarg.h>
 #include <math.h>
 #include <ctype.h>
-
 #include <stdlib.h>
-
-#ifndef _MSC_VER
-#include <alloca.h>
-#else
-#include <malloc.h>
-#endif
 
 #ifdef TARGET_IPHONE
 #include <OpenGLES/ES2/gl.h>
@@ -55,7 +48,6 @@ static int num_quads;
 static int vattr = -1;
 static int tattr = -1;
 static unsigned int font_tex;
-static int buf_mode = DTX_NBF;
 
 
 int dtx_gl_init(void)
@@ -117,21 +109,21 @@ void dtx_glyph(int code)
 
 	if(!dtx_font || !(gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
 		return;
-	}
+}
 	set_glyphmap_texture(gmap);
 
 	add_glyph(gmap->glyphs + code - gmap->cstart, 0, 0);
 	dtx_flush();
 }
 
-static const char *put_char(const char *str, float *pos_x, float *pos_y, int *should_flush)
+const char *dtx_put_char(const char *str, float *pos_x, float *pos_y, int *should_flush)
 {
 	struct dtx_glyphmap *gmap;
 	float px, py;
 	int code = dtx_utf8_char_code(str);
 	str = dtx_utf8_next_char((char*)str);
 
-	if(buf_mode == DTX_LBF && code == '\n') {
+	if(dtx_buf_mode == DTX_LBF && code == '\n') {
 		*should_flush = 1;
 	}
 
@@ -147,48 +139,6 @@ static const char *put_char(const char *str, float *pos_x, float *pos_y, int *sh
 	return str;
 }
 
-void dtx_string(const char *str)
-{
-	int should_flush = buf_mode == DTX_NBF;
-	float pos_x = 0.0f;
-	float pos_y = 0.0f;
-
-	if(!dtx_font) {
-		return;
-	}
-
-	while(*str) {
-		str = put_char(str, &pos_x, &pos_y, &should_flush);
-	}
-
-	if(should_flush) {
-		dtx_flush();
-	}
-}
-
-void dtx_printf(const char *fmt, ...)
-{
-	va_list ap;
-	int buf_size;
-	char *buf, tmp;
-
-	if(!dtx_font) {
-		return;
-	}
-
-	buf_size = vsnprintf(&tmp, 0, fmt, ap);
-
-	if(buf_size == -1) {
-		buf_size = 512;
-	}
-
-	buf = alloca(buf_size + 1);
-	va_start(ap, fmt);
-	vsnprintf(buf, buf_size + 1, fmt, ap);
-	va_end(ap);
-
-	dtx_string(buf);
-}
 
 static void qvertex(struct vertex *v, float x, float y, float s, float t)
 {

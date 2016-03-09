@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2012  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -15,8 +15,10 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef TEXT_IMPL_H_
-#define TEXT_IMPL_H_
+#ifndef DRAWTEXT_IMPL_H_
+#define DRAWTEXT_IMPL_H_
+
+#include "drawtext.h"
 
 struct glyph {
 	int code;
@@ -58,7 +60,7 @@ struct dtx_font {
 
 struct dtx_font *dtx_font;
 int dtx_font_sz;
-
+int dtx_buf_mode;	/* DTX_NBF is 0 */
 
 #define fperror(str) \
 	fprintf(stderr, "%s: %s: %s\n", __func__, (str), strerror(errno))
@@ -73,4 +75,4 @@ int dtx_gl_init(void);
 /* implemented in font.c */
 struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos);
 
-#endif	/* TEXT_IMPL_H_ */
+#endif	/* DRAWTEXT_IMPL_H_ */

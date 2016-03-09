@@ -1,0 +1,7 @@
+*.o
+*.d
+*.swp
+lib*.a
+lib*.so
+lib*.so.*
+Makefile

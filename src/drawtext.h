@@ -26,7 +26,7 @@ struct dtx_glyphmap;
 
 /* draw buffering modes */
 enum {
-	DTX_NBF,	/* unbuffered */
+	DTX_NBF = 0,/* unbuffered */
 	DTX_LBF,	/* line buffered */
 	DTX_FBF		/* fully buffered */
 };
