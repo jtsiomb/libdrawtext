@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2014  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -98,6 +98,18 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap);
 void dtx_add_glyphmap(struct dtx_font *fnt, struct dtx_glyphmap *gmap);
 
 /* ---- rendering ---- */
+
+/* the dtx_target_ functions select which rendering mode to use.
+ * default: opengl
+ */
+void dtx_target_opengl(void);
+/* pixels are expected to be RGBA ordered bytes, 4 per pixel
+ * text is rendered with pre-multiplied alpha
+ */
+void dtx_target_raster(unsigned char *pixels, int width, int height);
+
+/* TODO currently only used by the raster renderer, implement in gl too */
+void dtx_color(float r, float g, float b, float a);
 
 /* before drawing anything this function must set the font to use */
 void dtx_use_font(struct dtx_font *fnt, int sz);

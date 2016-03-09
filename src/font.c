@@ -556,7 +556,9 @@ void dtx_add_glyphmap(struct dtx_font *fnt, struct dtx_glyphmap *gmap)
 
 void dtx_use_font(struct dtx_font *fnt, int sz)
 {
-	dtx_gl_init();
+	if(!dtx_drawchar) {
+		dtx_target_opengl();
+	}
 
 	dtx_font = fnt;
 	dtx_font_sz = sz;

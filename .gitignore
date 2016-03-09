@@ -4,4 +4,10 @@
 lib*.a
 lib*.so
 lib*.so.*
+*.ttf
+*.ppm
+examples/simple/simple
+examples/unicode/unicode
+examples/raster/raster
+examples/nofreetype/nofreetype
 Makefile

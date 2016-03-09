@@ -39,8 +39,11 @@ struct quad {
 	struct vertex v[6];
 };
 
+static int dtx_gl_init(void);
 static void cleanup(void);
 static void add_glyph(struct glyph *g, float x, float y);
+static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush);
+static void flush(void);
 
 #define QBUF_SZ		512
 static struct quad *qbuf;
@@ -49,8 +52,14 @@ static int vattr = -1;
 static int tattr = -1;
 static unsigned int font_tex;
 
+void dtx_target_opengl(void)
+{
+	dtx_gl_init();
+	dtx_drawchar = drawchar;
+	dtx_drawflush = flush;
+}
 
-int dtx_gl_init(void)
+static int dtx_gl_init(void)
 {
 	if(qbuf) {
 		return 0;	/* already initialized */
@@ -109,14 +118,14 @@ void dtx_glyph(int code)
 
 	if(!dtx_font || !(gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
 		return;
-}
+	}
 	set_glyphmap_texture(gmap);
 
 	add_glyph(gmap->glyphs + code - gmap->cstart, 0, 0);
 	dtx_flush();
 }
 
-const char *dtx_put_char(const char *str, float *pos_x, float *pos_y, int *should_flush)
+static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush)
 {
 	struct dtx_glyphmap *gmap;
 	float px, py;
@@ -168,7 +177,7 @@ static void add_glyph(struct glyph *g, float x, float y)
 	}
 }
 
-void dtx_flush(void)
+static void flush(void)
 {
 	int vbo;
 

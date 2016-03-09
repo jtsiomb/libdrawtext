@@ -4,6 +4,7 @@ fonts = fonts/linux-libertine.ttf fonts/klingon.ttf fonts/sazanami-mincho.ttf
 all: $(fonts)
 	$(MAKE) -C simple
 	$(MAKE) -C unicode
+	$(MAKE) -C raster
 	$(MAKE) -C nofreetype
 
 fonts/linux-libertine.ttf:
