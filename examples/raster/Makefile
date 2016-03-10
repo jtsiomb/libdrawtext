@@ -1,23 +1,14 @@
 obj = raster.o
 bin = raster
+root = ../..
 
-CFLAGS = -pedantic -Wall -g -I../../src -I/usr/local/include
-LDFLAGS = -L. -L/usr/local/lib -ldrawtext
+CFLAGS = -pedantic -Wall -g -I$(root)/src -I/usr/local/include
+LDFLAGS = -L$(root) -Wl,-rpath=$(root) -ldrawtext
 
 font = serif.ttf
 
-ifeq ($(shell uname -s), Darwin)
-	lib_so = libdrawtext.dylib
-else
-	lib_so = libdrawtext.so.0.2
-endif
-
 $(bin): $(obj) $(lib_so) $(font)
 	$(CC) -o $@ $(obj) $(LDFLAGS)
-
-$(lib_so): ../../$(lib_so)
-	rm -f $@
-	ln -s $< $@
 
 $(font): ../fonts/linux-libertine.ttf
 	rm -f $@
@@ -25,4 +16,4 @@ $(font): ../fonts/linux-libertine.ttf
 
 .PHONY: clean
 clean:
-	rm -f $(obj) $(bin) $(lib_so)
+	rm -f $(obj) $(bin)

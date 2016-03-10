@@ -15,7 +15,7 @@ ifeq ($(shell uname -s), Darwin)
 else
 	soname = $(name).so.$(abi)
 	lib_so = $(soname).$(rev)
-	linkname = $(name).so
+	ldname = $(name).so
 	sharedopt = -shared -Wl,-soname,$(soname)
 
 	libgl = -lGL -lGLU -lGLEW
@@ -26,13 +26,17 @@ CFLAGS = -pedantic -Wall -g -fPIC -I$(PREFIX)/include $(ft2_cflags)
 LDFLAGS = -L$(PREFIX)/lib $(ft2_libs) $(libgl)
 
 .PHONY: all
-all: $(lib_a) $(lib_so)
+all: $(lib_a) $(lib_so) $(soname) $(ldname)
 
 $(lib_a): $(obj)
 	$(AR) rcs $@ $(obj)
 
 $(lib_so): $(obj)
 	$(CC) $(sharedopt) -o $@ $(obj) $(LDFLAGS)
+	[ -n "$(ldname)" ] && \
+		rm -f $(soname) && ln -s $(lib_so) $(soname) && \
+		rm -f $(ldname) && ln -s $(soname) $(ldname) || \
+		true
 
 -include $(dep)
 
@@ -57,16 +61,16 @@ install: $(lib_a) $(lib_so)
 	cp $(lib_a) $(PREFIX)/lib/$(lib_a)
 	cp $(lib_so) $(PREFIX)/lib/$(lib_so)
 	cp src/drawtext.h $(PREFIX)/include/drawtext.h
-	[ -n "$(linkname)" ] && \
-		rm -f $(PREFIX)/lib/$(linkname) $(PREFIX)/lib/$(soname) && \
-		cd $(PREFIX)/lib && ln -s $(lib_so) $(linkname) && ln -s $(lib_so) $(soname) || true
+	[ -n "$(ldname)" ] && \
+		rm -f $(PREFIX)/lib/$(ldname) $(PREFIX)/lib/$(soname) && \
+		cd $(PREFIX)/lib && ln -s $(lib_so) $(ldname) && ln -s $(lib_so) $(soname) || true
 
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(PREFIX)/lib/$(lib_a)
 	rm -f $(PREFIX)/lib/$(lib_so)
-	rm -f $(PREFIX)/lib/$(linkname)
+	rm -f $(PREFIX)/lib/$(ldname)
 	rm -f $(PREFIX)/lib/$(soname)
 	rm -f $(PREFIX)/include/drawtext.h
 

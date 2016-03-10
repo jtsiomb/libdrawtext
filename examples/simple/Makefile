@@ -1,26 +1,20 @@
 obj = simple.o
 bin = simple
+root = ../..
 
-CC = gcc
-CFLAGS = -pedantic -Wall -g -I../../src -I/usr/local/include
-LDFLAGS = -L. -L/usr/local/lib -ldrawtext $(libgl)
+CFLAGS = -pedantic -Wall -g -I$(root)/src
+LDFLAGS = -L$(root) -Wl,-rpath=$(root) -ldrawtext $(libgl)
 
 font = serif.ttf
 
 ifeq ($(shell uname -s), Darwin)
 	libgl = -framework OpenGL -framework GLUT
-	lib_so = libdrawtext.dylib
 else
 	libgl = -lGL -lGLU -lglut
-	lib_so = libdrawtext.so.0.2
 endif
 
-$(bin): $(obj) $(lib_so) $(font)
+$(bin): $(obj) $(font)
 	$(CC) -o $@ $(obj) $(LDFLAGS)
-
-$(lib_so): ../../$(lib_so)
-	rm -f $@
-	ln -s $< $@
 
 $(font): ../fonts/linux-libertine.ttf
 	rm -f $@
@@ -28,4 +22,4 @@ $(font): ../fonts/linux-libertine.ttf
 
 .PHONY: clean
 clean:
-	rm -f $(obj) $(bin) $(lib_so)
+	rm -f $(obj) $(bin)
