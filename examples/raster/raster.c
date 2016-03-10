@@ -23,8 +23,8 @@ int main(int argc, char **argv)
 	dtx_use_font(font, 32);
 
 	/* create the raster image we'll draw into */
-	img.width = 800;
-	img.height = 600;
+	img.width = 640;
+	img.height = 480;
 	if(!(img.pixels = malloc(img.width * img.height * 4))) {
 		perror("failed to allocate image memory");
 		return 1;
