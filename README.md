@@ -15,13 +15,13 @@ included font2glyphmap tool, or by calling `dtx_save_glyphmap`.
 See examples subdir for simple programs demonstrating libdrawtext usage, and
 refer to the heavily commented drawtext.h header file.
 
-website: http://nuclear.mutantstargoat.com/sw/libdrawtext
-repository (git): https://github.com/jtsiomb/libdrawtext.git
+- website: http://nuclear.mutantstargoat.com/sw/libdrawtext
+- repository (git): https://github.com/jtsiomb/libdrawtext.git
 
 Dependencies
 ------------
- - OpenGL/GLEW (optional): http://glew.sourceforge.net
- - freetype2 (optional): http://www.freetype.org
+- OpenGL/GLEW (optional): http://glew.sourceforge.net
+- freetype2 (optional): http://www.freetype.org
 
 License
 -------
