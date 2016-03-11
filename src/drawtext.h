@@ -97,6 +97,24 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap);
 /* adds a glyphmap to a font */
 void dtx_add_glyphmap(struct dtx_font *fnt, struct dtx_glyphmap *gmap);
 
+
+/* ---- options and flags ---- */
+enum dtx_option {
+	/* options for the OpenGL renderer */
+	DTX_GL_ATTR_VERTEX,   /* vertex attribute location     (default: -1 for standard gl_Vertex) */
+	DTX_GL_ATTR_TEXCOORD, /* texture uv attribute location (default: -1 for gl_MultiTexCoord0) */
+	DTX_GL_ATTR_COLOR,	  /* color attribute location      (default: -1 for gl_Color) */
+	/* options for the raster renderer */
+	DTX_RASTER_THRESHOLD, /* opaque/transparent threshold  (default: -1. fully opaque glyphs) */
+	DTX_RASTER_BLEND,     /* glyph alpha blending (0 or 1) (default: 0 (off)) */
+
+	DTX_FORCE_32BIT_ENUM = 0x7fffffff	/* this is not a valid option */
+};
+
+void dtx_set(enum dtx_option opt, int val);
+int dtx_get(enum dtx_option opt);
+
+
 /* ---- rendering ---- */
 
 /* the dtx_target_ functions select which rendering mode to use.
@@ -108,6 +126,8 @@ void dtx_target_opengl(void);
  */
 void dtx_target_raster(unsigned char *pixels, int width, int height);
 
+/* position of the origin of the first character to be printed */
+void dtx_position(float x, float y);
 /* TODO currently only used by the raster renderer, implement in gl too */
 void dtx_color(float r, float g, float b, float a);
 
@@ -127,6 +147,10 @@ void dtx_draw_buffering(int mode);
  *
  * NOTE: If you are using OpenGL ES 2.x or OpenGL >= 3.1 pure (non-compatibility) context
  * you must specify valid attribute indices.
+ *
+ * NOTE2: equivalent to:
+ *    dtx_set(DTX_GL_ATTR_VERTEX, vert_attr);
+ *    dtx_set(DTX_GL_ATTR_TEXCOORD, tex_attr);
  */
 void dtx_vertex_attribs(int vert_attr, int tex_attr);
 

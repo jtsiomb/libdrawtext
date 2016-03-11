@@ -25,6 +25,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "drawtext.h"
 #include "drawtext_impl.h"
 
+void dtx_set(enum dtx_option opt, int val)
+{
+	dtx_gl_setopt(opt, val);
+	dtx_rast_setopt(opt, val);
+}
+
+int dtx_get(enum dtx_option opt)
+{
+	int val;
+
+	if(dtx_gl_getopt(opt, &val) != -1) {
+		return val;
+	}
+	if(dtx_rast_getopt(opt, &val) != -1) {
+		return val;
+	}
+	return -1;
+}
+
+
+void dtx_position(float x, float y)
+{
+	dtx_cur_offset[0] = x;
+	dtx_cur_offset[1] = y;
+}
+
 void dtx_color(float r, float g, float b, float a)
 {
 	dtx_cur_color[0] = r;
@@ -41,8 +67,8 @@ void dtx_color(float r, float g, float b, float a)
 void dtx_string(const char *str)
 {
 	int should_flush = dtx_buf_mode == DTX_NBF;
-	float pos_x = 0.0f;
-	float pos_y = 0.0f;
+	float pos_x = dtx_cur_offset[0];
+	float pos_y = dtx_cur_offset[1];
 
 	if(!dtx_font) {
 		return;

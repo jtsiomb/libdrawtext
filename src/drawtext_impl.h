@@ -63,6 +63,7 @@ int dtx_font_sz;
 int dtx_buf_mode;	/* DTX_NBF is 0 */
 float dtx_cur_color[4];
 int dtx_cur_color_int[4];
+float dtx_cur_offset[2];
 
 #define fperror(str) \
 	fprintf(stderr, "%s: %s: %s\n", __func__, (str), strerror(errno))
@@ -77,5 +78,10 @@ struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos);
 
 const char *(*dtx_drawchar)(const char*, float*, float*, int*);
 void (*dtx_drawflush)(void);
+
+int dtx_gl_setopt(enum dtx_option opt, int val);
+int dtx_gl_getopt(enum dtx_option opt, int *ret);
+int dtx_rast_setopt(enum dtx_option opt, int val);
+int dtx_rast_getopt(enum dtx_option opt, int *ret);
 
 #endif	/* DRAWTEXT_IMPL_H_ */

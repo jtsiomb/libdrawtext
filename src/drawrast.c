@@ -28,6 +28,8 @@ static void draw_glyph(struct glyph *g, float x, float y);
 static unsigned char *fb_pixels;
 static int fb_width, fb_height;
 static struct dtx_glyphmap *gmap;
+static int threshold = -1;
+static int use_alpha;
 
 void dtx_target_raster(unsigned char *pixels, int width, int height)
 {
@@ -36,6 +38,36 @@ void dtx_target_raster(unsigned char *pixels, int width, int height)
 	fb_height = height;
 	dtx_drawchar = drawchar;
 	dtx_drawflush = flush;
+}
+
+int dtx_rast_setopt(enum dtx_option opt, int val)
+{
+	switch(opt) {
+	case DTX_RASTER_THRESHOLD:
+		threshold = val;
+		break;
+	case DTX_RASTER_BLEND:
+		use_alpha = val;
+		break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+int dtx_rast_getopt(enum dtx_option opt, int *res)
+{
+	switch(opt) {
+	case DTX_RASTER_THRESHOLD:
+		*res = threshold;
+		break;
+	case DTX_RASTER_BLEND:
+		*res = use_alpha ? 1 : 0;
+		break;
+	default:
+		return -1;
+	}
+	return 0;
 }
 
 static const char *drawchar(const char *str, float *xpos, float *ypos, int *should_flush)
@@ -60,34 +92,92 @@ static void flush(void)
 {
 }
 
-static void draw_glyph(struct glyph *g, float x, float y)
+static void blit_opaque(unsigned char *dest, unsigned char *src, int xsz, int ysz)
 {
 	int i, j;
-	int ix = (int)(x - g->orig_x);
-	int iy = (int)(y - g->orig_y);
+	int *col = dtx_cur_color_int;
+
+	for(i=0; i<ysz; i++) {
+		for(j=0; j<xsz; j++) {
+			int val = src[j];
+			*dest++ = val * col[0] / 255;
+			*dest++ = val * col[1] / 255;
+			*dest++ = val * col[2] / 255;
+			*dest++ = val;
+		}
+		dest += (fb_width - xsz) * 4;
+		src += gmap->xsz;
+	}
+}
+
+static void blit_thres(unsigned char *dest, unsigned char *src, int xsz, int ysz)
+{
+	int i, j;
+	int *col = dtx_cur_color_int;
+
+	for(i=0; i<ysz; i++) {
+		for(j=0; j<xsz; j++) {
+			int val = src[j];
+			if(val > threshold) {
+				*dest++ = col[0];
+				*dest++ = col[1];
+				*dest++ = col[2];
+				*dest++ = col[3];
+			} else {
+				dest += 4;
+			}
+		}
+		dest += (fb_width - xsz) * 4;
+		src += gmap->xsz;
+	}
+}
+
+static void blit_blend(unsigned char *dest, unsigned char *src, int xsz, int ysz)
+{
+	int i, j, k;
+	int *col = dtx_cur_color_int;
+
+	for(i=0; i<ysz; i++) {
+		for(j=0; j<xsz; j++) {
+			int alpha = src[j];
+			int inv_alpha = 255 - alpha;
+
+			for(k=0; k<4; k++) {
+				dest[k] = (col[k] * alpha + dest[k] * inv_alpha) / 255;
+			}
+			dest += 4;
+		}
+		dest += (fb_width - xsz) * 4;
+		src += gmap->xsz;
+	}
+}
+
+static void draw_glyph(struct glyph *g, float x, float y)
+{
 	int gx = (int)g->x;
 	int gy = (int)g->y;
 	int gwidth = (int)g->width;
 	int gheight = (int)g->height;
-	int *col = dtx_cur_color_int;
-	int xend = ix + gwidth;
-	int yend = iy + gheight;
+	int ix = (int)(x - g->orig_x);
+	int iy = (int)(y - gheight + g->orig_y);
 
 	if(ix >= fb_width || iy >= fb_height)
 		return;
 
 	if(ix < 0) {
 		gwidth += ix;
+		gx -= ix;
 		ix = 0;
 	}
 	if(iy < 0) {
 		gheight += iy;
+		gy -= iy;
 		iy = 0;
 	}
-	if(xend >= fb_width) {
+	if(ix + gwidth >= fb_width) {
 		gwidth = fb_width - ix;
 	}
-	if(yend >= fb_height) {
+	if(iy + gheight >= fb_height) {
 		gheight = fb_height - iy;
 	}
 
@@ -96,15 +186,13 @@ static void draw_glyph(struct glyph *g, float x, float y)
 
 	unsigned char *dest = fb_pixels + (iy * fb_width + ix) * 4;
 	unsigned char *src = gmap->pixels + gy * gmap->xsz + gx;
-	for(i=0; i<gheight; i++) {
-		for(j=0; j<gwidth; j++) {
-			int val = src[j];
-			*dest++ = val * col[0] / 255;
-			*dest++ = val * col[1] / 255;
-			*dest++ = val * col[2] / 255;
-			*dest++ = val;
-		}
-		dest += (fb_width - gwidth) * 4;
-		src += gmap->xsz;
+
+	if(use_alpha) {
+		blit_blend(dest, src, gwidth, gheight);
+	} else if(threshold > 0) {
+		blit_thres(dest, src, gwidth, gheight);
+	} else {
+		blit_opaque(dest, src, gwidth, gheight);
 	}
 }
+

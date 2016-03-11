@@ -50,6 +50,7 @@ static struct quad *qbuf;
 static int num_quads;
 static int vattr = -1;
 static int tattr = -1;
+static int cattr = -1;
 static unsigned int font_tex;
 
 void dtx_target_opengl(void)
@@ -57,6 +58,42 @@ void dtx_target_opengl(void)
 	dtx_gl_init();
 	dtx_drawchar = drawchar;
 	dtx_drawflush = flush;
+}
+
+int dtx_gl_setopt(enum dtx_option opt, int val)
+{
+	switch(opt) {
+	case DTX_GL_ATTR_VERTEX:
+		vattr = val;
+		break;
+	case DTX_GL_ATTR_TEXCOORD:
+		tattr = val;
+		break;
+	case DTX_GL_ATTR_COLOR:
+		cattr = val;
+		break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+int dtx_gl_getopt(enum dtx_option opt, int *res)
+{
+	switch(opt) {
+	case DTX_GL_ATTR_VERTEX:
+		*res = vattr;
+		break;
+	case DTX_GL_ATTR_TEXCOORD:
+		*res = tattr;
+		break;
+	case DTX_GL_ATTR_COLOR:
+		*res = cattr;
+		break;
+	default:
+		return -1;
+	}
+	return 0;
 }
 
 static int dtx_gl_init(void)
@@ -251,5 +288,11 @@ static void flush(void)
 
 	num_quads = 0;
 }
+#else
+
+/* no-opengl build, define all public gl functions as stubs */
+void dtx_target_opengl(void) {}
+int dtx_gl_setopt(enum dtx_option opt, int val) { return -1; }
+int dtx_gl_getopt(enum dtx_option opt, int val) { return -1; }
 
 #endif	/* !def NO_OPENGL */

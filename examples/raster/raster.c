@@ -10,9 +10,11 @@ struct image {
 };
 
 int save_image(const struct image *img, const char *fname);
+float frand(void);
 
 int main(int argc, char **argv)
 {
+	int i;
 	struct dtx_font *font;
 	struct image img;
 
@@ -29,13 +31,19 @@ int main(int argc, char **argv)
 		perror("failed to allocate image memory");
 		return 1;
 	}
-	memset(img.pixels, 0, img.width * img.height * 4);	/* clear to black */
+	memset(img.pixels, 0x20, img.width * img.height * 4);	/* clear fb */
 
 	/* set the render target to libdrawtext and enable raster drawing */
 	dtx_target_raster(img.pixels, img.width, img.height);
-	dtx_color(1, 0, 0, 1);	/* red text */
+	dtx_set(DTX_RASTER_BLEND, 1);	/* enable alpha blended drawing */
 
-	dtx_printf("hello world!");
+	for(i=0; i<64; i++) {
+		dtx_color(frand(), frand(), frand(), 1);
+		dtx_position((frand() * 1.25 - 0.25) * img.width,
+				(frand() * 1.25 - 0.25) * img.height);
+		dtx_printf("hello world!");
+	}
+
 	if(save_image(&img, "output.ppm") == -1) {
 		return 1;
 	}
@@ -63,4 +71,9 @@ int save_image(const struct image *img, const char *fname)
 	}
 	fclose(fp);
 	return 0;
+}
+
+float frand(void)
+{
+	return (float)rand() / (float)RAND_MAX;
 }
