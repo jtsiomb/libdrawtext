@@ -93,7 +93,9 @@ void dtx_printf(const char *fmt, ...)
 		return;
 	}
 
+	va_start(ap, fmt);
 	buf_size = vsnprintf(&tmp, 0, fmt, ap);
+	va_end(ap);
 
 	if(buf_size == -1) {
 		buf_size = 512;
