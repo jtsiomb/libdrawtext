@@ -20,7 +20,7 @@ refer to the heavily commented drawtext.h header file.
 
 Dependencies
 ------------
-- OpenGL/GLEW (optional): http://glew.sourceforge.net
+- OpenGL (optional)
 - freetype2 (optional): http://www.freetype.org
 
 License
