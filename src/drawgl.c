@@ -24,8 +24,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef TARGET_IPHONE
 #include <OpenGLES/ES2/gl.h>
 #else
-#include <GL/glew.h>
+
+#ifdef WIN32
+#include <windows.h>
 #endif
+
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif	/* __APPLE__ */
+#endif	/* !TARGET_IPHONE */
 
 #include "drawtext.h"
 #include "drawtext_impl.h"
@@ -52,6 +62,29 @@ static int vattr = -1;
 static int tattr = -1;
 static int cattr = -1;
 static unsigned int font_tex;
+
+#ifndef GL_VERSION_1_5
+#define GL_ARRAY_BUFFER 0x8892
+#define GL_ARRAY_BUFFER_BINDING 0x8894
+typedef void (APIENTRY *PFNGLBINDBUFFERPROC)(GLenum target, GLuint buffer);
+static PFNGLBINDBUFFERPROC glBindBuffer;
+#endif
+
+#ifndef GL_VERSION_2_0
+typedef void (APIENTRY *PFNGLENABLEVERTEXATTRIBARRAYPROC)(GLuint index);
+typedef void (APIENTRY *PFNGLDISABLEVERTEXATTRIBARRAYPROC)(GLuint index);
+typedef void (APIENTRY *PFNGLVERTEXATTRIBPOINTERPROC)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
+static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+static PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+#endif
+
+#ifdef WIN32
+#define load_glfunc(s)	wglGetProcAddress(s)
+#elif defined(__unix__)
+#define load_glfunc(s)	glXGetProcAddress((unsigned char*)s)
+#endif
+
 
 void dtx_target_opengl(void)
 {
@@ -102,7 +135,14 @@ static int dtx_gl_init(void)
 		return 0;	/* already initialized */
 	}
 
-	glewInit();
+#ifndef GL_VERSION_1_5
+	glBindBuffer = (PFNGLBINDBUFFERPROC)load_glfunc("glBindBuffer");
+#endif
+#ifndef GL_VERSION_2_0
+	glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)load_glfunc("glEnableVertexAttribArray");
+	glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC)load_glfunc("glDisableVertexAttribArray");
+	glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)load_glfunc("glVertexAttribPointer");
+#endif
 
 	if(!(qbuf = malloc(QBUF_SZ * sizeof *qbuf))) {
 		return -1;
