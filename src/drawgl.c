@@ -32,8 +32,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
+#define GL_GLEXT_LEGACY		/* don't include glext.h internally in gl.h */
 #include <GL/gl.h>
 #include <GL/glu.h>
+
+#ifdef __unix__
+#define GLX_GLXEXT_LEGACY	/* don't include glxext.h internally in glx.h */
+#include <GL/glx.h>
+#endif
+
 #endif	/* __APPLE__ */
 #endif	/* !TARGET_IPHONE */
 
