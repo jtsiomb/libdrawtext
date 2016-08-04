@@ -31,6 +31,12 @@ enum {
 	DTX_FBF		/* fully buffered */
 };
 
+/* glyphmap resize filtering */
+enum {
+	DTX_NEAREST,
+	DTX_LINEAR
+};
+
 struct dtx_box {
 	float x, y;
 	float width, height;
@@ -62,6 +68,12 @@ void dtx_prepare(struct dtx_font *fnt, int sz);
 /* prepare an arbitrary unicode range glyphmap for the specified font size */
 void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend);
 
+/* convert all glyphmaps to distance fields for use with the distance field
+ * font rendering algorithm. This is a convenience function which calls
+ * dtx_calc_glyphmap_distfield and dtx_resize_glyphmap(..., 0.5, DTX_LINEAR).
+ */
+int dtx_calc_font_distfield(struct dtx_font *fnt);
+
 /* Finds the glyphmap that contains the specified character code and matches the requested size
  * Returns null if it hasn't been created (you should call dtx_prepare/dtx_prepare_range).
  */
@@ -78,6 +90,19 @@ struct dtx_glyphmap *dtx_get_font_glyphmap_range(struct dtx_font *fnt, int sz, i
 struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int cstart, int cend);
 /* free a glyphmap */
 void dtx_free_glyphmap(struct dtx_glyphmap *gmap);
+
+/* converts a glyphmap to a distance field glyphmap, for use with the distance
+ * field font rendering algorithm. The distance will be written to the alpha
+ * channel, so that alpha-test (0.5) rendering will just work out of the box.
+ *
+ * It is recommended to use a fairly large font size glyphmap for this, and
+ * then shrink the resulting distance field glyphmap as needed, with
+ * dtx_resize_glyphmap
+ */
+int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap);
+
+/* resize a glyphmap by the provided scale factor */
+int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, float scale, int filter);
 
 /* returns a pointer to the raster image of a glyphmap (1 byte per pixel grayscale) */
 unsigned char *dtx_get_glyphmap_image(struct dtx_glyphmap *gmap);

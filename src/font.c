@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2014  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -160,6 +160,23 @@ void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend)
 	}
 }
 
+int dtx_calc_font_distfield(struct dtx_font *fnt)
+{
+	struct dtx_glyphmap *gm = fnt->gmaps;
+	while(gm) {
+		if(dtx_calc_glyphmap_distfield(gm) == -1) {
+			fprintf(stderr, "%s failed to create distfield glyphmap\n", __func__);
+			return -1;
+		}
+
+		if(dtx_resize_glyphmap(gm, 0.5, DTX_LINEAR) == -1) {
+			fprintf(stderr, "%s: failed to resize glyhphmap during distfield conversion\n", __func__);
+		}
+		gm = gm->next;
+	}
+	return 0;
+}
+
 struct dtx_glyphmap *dtx_get_font_glyphmap(struct dtx_font *fnt, int sz, int code)
 {
 	struct dtx_glyphmap *gm;
@@ -211,7 +228,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	FT_Face face = fnt->face;
 	int i, j;
 	int gx, gy;
-	int padding = 4;
+	int padding = 4;	/* TODO make this configurable */
 	int total_width, max_width, max_height;
 
 	FT_Set_Char_Size(fnt->face, 0, sz * 64, 72, 72);
@@ -314,6 +331,109 @@ void dtx_free_glyphmap(struct dtx_glyphmap *gmap)
 		free(gmap->glyphs);
 		free(gmap);
 	}
+}
+
+#define CHECK_BOUNDS(gm, x, y) ((x) >= 0 && (x) < (gm)->xsz && (y) >= 0 && (y) < (gm)->ysz)
+
+static int has_adj_value(struct dtx_glyphmap *gmap, int x, int y, int val)
+{
+	static const int adjoffs[8][2] = {
+		{-1, 0}, {1, 0}, {0, -1}, {0, 1},
+		{-1, -1}, {-1, 1}, {1, -1}, {1, 1}
+	};
+	int i;
+	unsigned char cval = (unsigned char)val;
+
+	for(i=0; i<8; i++) {
+		int px = x + adjoffs[i][0];
+		int py = y + adjoffs[i][1];
+
+		if(CHECK_BOUNDS(gmap, px, py)) {
+			unsigned char adj = gmap->pixels[py * gmap->xsz + px];
+			if(adj == cval) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
+{
+	int i, j, k, num_found, num_pixels = gmap->xsz * gmap->ysz;
+	unsigned char *pptr;/*, *tmp, *from, *to, *sptr, *dptr;
+
+	if(!(tmp = malloc(num_pixels))) {
+		return -1;
+	}*/
+
+	/* quantize to 129 (emtpy) and 255 (font interior) */
+	pptr = gmap->pixels;
+	for(i=0; i<num_pixels; i++) {
+		unsigned char c = *pptr;
+		*pptr++ = c < 128 ? 129 : 255;
+	}
+
+	/* init inverted because loop swaps at the top */
+	/*to = gmap->pixels;
+	from = tmp;*/
+
+	/* convert font interiors to negative distances */
+	for(i=0; i<128; i++) {
+		int adj_targ = 129 - i;
+		pptr = gmap->pixels;
+		num_found = 0;
+
+		for(j=0; j<gmap->ysz; j++) {
+			for(k=0; k<gmap->xsz; k++) {
+				unsigned char c = *pptr;
+
+				if(c == 255) {
+					++num_found;
+					if(has_adj_value(gmap, k, j, adj_targ)) {
+						*pptr = adj_targ - 1;
+					}
+				}
+				++pptr;
+			}
+		}
+		if(!num_found) break;
+	}
+
+	/* flip all empty pixels to 0 */
+	for(i=0; i<num_pixels; i++) {
+		if(gmap->pixels[i] == 129) {
+			gmap->pixels[i] = 0;
+		}
+	}
+
+	/* convert font exterior to positive distances */
+	for(i=0; i<128; i++) {
+		int adj_targ = 128 + i;
+		pptr = gmap->pixels;
+		num_found = 0;
+
+		for(j=0; j<gmap->ysz; j++) {
+			for(k=0; k<gmap->xsz; k++) {
+				unsigned char c = *pptr;
+
+				if(c == 0) {
+					++num_found;
+					if(has_adj_value(gmap, k, j, adj_targ)) {
+						*pptr = adj_targ + 1;
+					}
+				}
+				++pptr;
+			}
+		}
+		if(!num_found) break;
+	}
+	return 0;
+}
+
+int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, float scale, int filter)
+{
+	return 0;	/* TODO */
 }
 
 unsigned char *dtx_get_glyphmap_pixels(struct dtx_glyphmap *gmap)

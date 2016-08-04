@@ -12,10 +12,11 @@ struct coderange {
 };
 
 void print_usage(const char *argv0);
-int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend);
+int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend, int conv_dist);
 
 int main(int argc, char **argv)
 {
+	int conv_dist = 0;
 	int i, font_size = DEF_SIZE, suffix_len = strlen(SUFFIX);
 	struct coderange *clist = 0;
 
@@ -46,6 +47,8 @@ int main(int argc, char **argv)
 					fprintf(stderr, "-size must be followed by the font size\n");
 					return 1;
 				}
+			} else if(strcmp(argv[i], "-dist") == 0) {
+				conv_dist = 1;
 			} else {
 				if(strcmp(argv[i], "-help") != 0 && strcmp(argv[i], "-h") != 0) {
 					fprintf(stderr, "invalid option: %s\n", argv[i]);
@@ -80,14 +83,14 @@ int main(int argc, char **argv)
 					clist = clist->next;
 
 					sprintf(outfile, "%s_s%d_r%04x-%04x.%s", basename, font_size, r->start, r->end, SUFFIX);
-					font2glyphmap(font, argv[i], outfile, font_size, r->start, r->end);
+					font2glyphmap(font, argv[i], outfile, font_size, r->start, r->end, conv_dist);
 
 					free(r);
 				}
 				clist = 0;
 			} else {
 				sprintf(outfile, "%s_s%d.%s", basename, font_size, SUFFIX);
-				font2glyphmap(font, argv[i], outfile, font_size, -1, -1);
+				font2glyphmap(font, argv[i], outfile, font_size, -1, -1, conv_dist);
 			}
 		}
 	}
@@ -101,10 +104,11 @@ void print_usage(const char *argv0)
 	printf("options:\n");
 	printf("  -size <pt>: point size (default: %d)\n", DEF_SIZE);
 	printf("  -range <low>-<high>: unicode range (default: ascii)\n");
+	printf("  -dist: convert to distance field glyphmap\n");
 	printf("  -help: print usage information and exit\n");
 }
 
-int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend)
+int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend, int conv_dist)
 {
 	struct dtx_glyphmap *gmap;
 
@@ -118,6 +122,13 @@ int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfna
 		dtx_prepare(font, size);
 		if(!(gmap = dtx_get_font_glyphmap(font, size, ' '))) {
 			fprintf(stderr, "failed to retrieve ASCII glyphmap!\n");
+			return -1;
+		}
+	}
+
+	if(conv_dist) {
+		if(dtx_calc_font_distfield(font) == -1) {
+			fprintf(stderr, "failed to convert font to distance field!\n");
 			return -1;
 		}
 	}
