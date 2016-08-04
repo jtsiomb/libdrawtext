@@ -12,11 +12,13 @@ struct coderange {
 };
 
 void print_usage(const char *argv0);
-int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend, int conv_dist);
+int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend,
+		int conv_dist, float scale);
 
 int main(int argc, char **argv)
 {
 	int conv_dist = 0;
+	float scale = -1.0f;
 	int i, font_size = DEF_SIZE, suffix_len = strlen(SUFFIX);
 	struct coderange *clist = 0;
 
@@ -49,6 +51,12 @@ int main(int argc, char **argv)
 				}
 			} else if(strcmp(argv[i], "-dist") == 0) {
 				conv_dist = 1;
+
+			} else if(strcmp(argv[i], "-scale") == 0) {
+				if((scale = atof(argv[++i])) <= 0.0f) {
+					fprintf(stderr, "-scale must be followed by a number > 0\n");
+					return 1;
+				}
 			} else {
 				if(strcmp(argv[i], "-help") != 0 && strcmp(argv[i], "-h") != 0) {
 					fprintf(stderr, "invalid option: %s\n", argv[i]);
@@ -83,14 +91,14 @@ int main(int argc, char **argv)
 					clist = clist->next;
 
 					sprintf(outfile, "%s_s%d_r%04x-%04x.%s", basename, font_size, r->start, r->end, SUFFIX);
-					font2glyphmap(font, argv[i], outfile, font_size, r->start, r->end, conv_dist);
+					font2glyphmap(font, argv[i], outfile, font_size, r->start, r->end, conv_dist, scale);
 
 					free(r);
 				}
 				clist = 0;
 			} else {
 				sprintf(outfile, "%s_s%d.%s", basename, font_size, SUFFIX);
-				font2glyphmap(font, argv[i], outfile, font_size, -1, -1, conv_dist);
+				font2glyphmap(font, argv[i], outfile, font_size, -1, -1, conv_dist, scale);
 			}
 		}
 	}
@@ -105,10 +113,12 @@ void print_usage(const char *argv0)
 	printf("  -size <pt>: point size (default: %d)\n", DEF_SIZE);
 	printf("  -range <low>-<high>: unicode range (default: ascii)\n");
 	printf("  -dist: convert to distance field glyphmap\n");
+	printf("  -scale <factor>: scale the glyphmap by factor before saving it\n");
 	printf("  -help: print usage information and exit\n");
 }
 
-int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend, int conv_dist)
+int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfname, int size, int rstart, int rend,
+		int conv_dist, float scale)
 {
 	struct dtx_glyphmap *gmap;
 
@@ -127,8 +137,18 @@ int font2glyphmap(struct dtx_font *font, const char *infname, const char *outfna
 	}
 
 	if(conv_dist) {
-		if(dtx_calc_font_distfield(font) == -1) {
+		if(dtx_calc_glyphmap_distfield(gmap) == -1) {
 			fprintf(stderr, "failed to convert font to distance field!\n");
+			return -1;
+		}
+		if(scale <= 0.0) {
+			scale = 0.5;
+		}
+	}
+
+	if(scale > 0) {
+		if(dtx_resize_glyphmap(gmap, scale, DTX_LINEAR) == -1) {
+			fprintf(stderr, "failed to resize glyphmap by %g\n", scale);
 			return -1;
 		}
 	}
