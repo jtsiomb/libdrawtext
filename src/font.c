@@ -431,9 +431,90 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 	return 0;
 }
 
+static unsigned char sample_area(struct dtx_glyphmap *gm, int x, int y, float area)
+{
+	int i, j;
+	int ksz = (int)(area + 0.5);
+
+	int sum, nsamples = 0;
+
+	for(i=0; i<ksz; i++) {
+		for(j=0; j<ksz; j++) {
+			int sx = x + j;
+			int sy = y + i;
+
+			if(sx < 0 || sx >= gm->xsz || sy < 0 || sy >= gm->ysz) {
+				continue;
+			}
+
+			sum += gm->pixels[sy * gm->xsz + sx];
+			++nsamples;
+		}
+	}
+
+	sum /= nsamples;
+	return sum > 255 ? 255 : sum;
+}
+
 int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, float scale, int filter)
 {
-	return 0;	/* TODO */
+	int i, j, nxsz, nysz;
+	unsigned char *sptr, *dptr, *new_pixels;
+	struct glyph *glyph;
+
+	if(scale == 1.0) return 0;
+	if(scale <= 0.0) return -1;
+
+	nxsz = (int)(gmap->xsz * scale) & 0xfffffffe;
+	nysz = (int)(gmap->ysz * scale) & 0xfffffffe;
+
+	if(nxsz < 1 || nysz < 1) {
+		return -1;
+	}
+
+	new_pixels = malloc(nxsz * nysz);
+	if(!new_pixels) {
+		fprintf(stderr, "%s: failed to allocate %dx%d pixel buffer\n", __func__, nxsz, nysz);
+		return -1;
+	}
+
+	dptr = new_pixels;
+
+	if(scale < 1.0) {
+		/* downscaling */
+		float area = 1.0 / scale;
+
+		for(i=0; i<nysz; i++) {
+			for(j=0; j<nxsz; j++) {
+				*dptr++ = sample_area(gmap, j * area, i * area, area);
+			}
+		}
+	}
+
+	free(gmap->pixels);
+	gmap->pixels = new_pixels;
+	gmap->xsz = nxsz;
+	gmap->ysz = nysz;
+
+	/* also scale all the metrics accordingly */
+	glyph = gmap->glyphs;
+	while(glyph) {
+		glyph->x *= scale;
+		glyph->y *= scale;
+		glyph->width *= scale;
+		glyph->height *= scale;
+		glyph->nx *= scale;
+		glyph->ny *= scale;
+		glyph->nwidth *= scale;
+		glyph->nheight *= scale;
+		glyph->orig_x *= scale;
+		glyph->orig_y *= scale;
+		glyph->advance *= scale;
+
+		glyph = glyph->next;
+	}
+	gmap->line_advance *= scale;
+	return 0;
 }
 
 unsigned char *dtx_get_glyphmap_pixels(struct dtx_glyphmap *gmap)

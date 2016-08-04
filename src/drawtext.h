@@ -92,8 +92,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 void dtx_free_glyphmap(struct dtx_glyphmap *gmap);
 
 /* converts a glyphmap to a distance field glyphmap, for use with the distance
- * field font rendering algorithm. The distance will be written to the alpha
- * channel, so that alpha-test (0.5) rendering will just work out of the box.
+ * field font rendering algorithm.
  *
  * It is recommended to use a fairly large font size glyphmap for this, and
  * then shrink the resulting distance field glyphmap as needed, with
