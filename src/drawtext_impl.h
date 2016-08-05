@@ -34,6 +34,7 @@ struct dtx_glyphmap {
 	int ptsize;
 
 	int xsz, ysz;
+	unsigned int xsz_mask;
 	unsigned char *pixels;
 	unsigned int tex;
 

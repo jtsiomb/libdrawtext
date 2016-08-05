@@ -169,7 +169,7 @@ int dtx_calc_font_distfield(struct dtx_font *fnt)
 			return -1;
 		}
 
-		if(dtx_resize_glyphmap(gm, 0.5, DTX_LINEAR) == -1) {
+		if(dtx_resize_glyphmap(gm, 1, 2, DTX_LINEAR) == -1) {
 			fprintf(stderr, "%s: failed to resize glyhphmap during distfield conversion\n", __func__);
 		}
 		gm = gm->next;
@@ -431,17 +431,18 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 	return 0;
 }
 
-static unsigned char sample_area(struct dtx_glyphmap *gm, int x, int y, float area)
+static unsigned char sample_area(struct dtx_glyphmap *gm, float x, float y, float area)
 {
 	int i, j;
 	int ksz = (int)(area + 0.5);
+	int half_ksz = ksz / 2;
 
-	int sum, nsamples = 0;
+	int sum = 0, nsamples = 0;
 
 	for(i=0; i<ksz; i++) {
 		for(j=0; j<ksz; j++) {
-			int sx = x + j;
-			int sy = y + i;
+			int sx = x + j - half_ksz;
+			int sy = y + i - half_ksz;
 
 			if(sx < 0 || sx >= gm->xsz || sy < 0 || sy >= gm->ysz) {
 				continue;
@@ -452,21 +453,59 @@ static unsigned char sample_area(struct dtx_glyphmap *gm, int x, int y, float ar
 		}
 	}
 
-	sum /= nsamples;
+	if(nsamples != 0) {
+		sum /= nsamples;
+	}
 	return sum > 255 ? 255 : sum;
 }
 
-int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, float scale, int filter)
+static unsigned char sample_pixel(struct dtx_glyphmap *gm, int x, int y)
+{
+	if(CHECK_BOUNDS(gm, x, y)) {
+		return gm->pixels[y * gm->xsz + x];
+	}
+	return 0;
+}
+
+static int count_bits(int x)
+{
+	int i, n = 0;
+	for(i=0; i<sizeof x * CHAR_BIT; i++) {
+		n += x & 1;
+		x >>= 1;
+	}
+	return n;
+}
+
+int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int filter)
 {
 	int i, j, nxsz, nysz;
-	unsigned char *sptr, *dptr, *new_pixels;
+	unsigned char *dptr, *new_pixels;
 	struct glyph *glyph;
 
-	if(scale == 1.0) return 0;
-	if(scale <= 0.0) return -1;
+	if(snum == sdenom) return 0;
 
-	nxsz = (int)(gmap->xsz * scale) & 0xfffffffe;
-	nysz = (int)(gmap->ysz * scale) & 0xfffffffe;
+	if((count_bits(snum) | count_bits(sdenom)) != 1) {
+		fprintf(stderr, "%s: invalid scale fraction %d/%d (not power of 2)\n", __func__, snum, sdenom);
+		return -1;
+	}
+
+	/* normalize the fraction */
+	if(snum > sdenom) {
+		snum /= sdenom;
+		sdenom /= sdenom;
+	} else {
+		snum /= snum;
+		sdenom /= snum;
+	}
+
+	if(snum != 1 && sdenom != 1) {
+		fprintf(stderr, "%s: invalid scale fraction %d/%d (neither is 1)\n", __func__, snum, sdenom);
+		return -1;
+	}
+
+	nxsz = snum * gmap->xsz / sdenom;
+	nysz = snum * gmap->ysz / sdenom;
 
 	if(nxsz < 1 || nysz < 1) {
 		return -1;
@@ -480,13 +519,22 @@ int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, float scale, int filter)
 
 	dptr = new_pixels;
 
-	if(scale < 1.0) {
-		/* downscaling */
-		float area = 1.0 / scale;
+	float scale = (float)snum / (float)sdenom;
+	float inv_scale = 1.0 / scale;
+	float area = scale <= 1.0 ? inv_scale : 2.0;
 
+	if(filter == DTX_NEAREST) {
+		/* no filtering, nearest neighbor */
 		for(i=0; i<nysz; i++) {
 			for(j=0; j<nxsz; j++) {
-				*dptr++ = sample_area(gmap, j * area, i * area, area);
+				*dptr++ = sample_pixel(gmap, j * inv_scale, i * inv_scale);
+			}
+		}
+	} else {
+		/* bilinear filtering */
+		for(i=0; i<nysz; i++) {
+			for(j=0; j<nxsz; j++) {
+				*dptr++ = sample_area(gmap, j * inv_scale, i * inv_scale, area);
 			}
 		}
 	}

@@ -70,7 +70,7 @@ void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend);
 
 /* convert all glyphmaps to distance fields for use with the distance field
  * font rendering algorithm. This is a convenience function which calls
- * dtx_calc_glyphmap_distfield and dtx_resize_glyphmap(..., 0.5, DTX_LINEAR).
+ * dtx_calc_glyphmap_distfield and dtx_resize_glyphmap(..., 1, 2, DTX_LINEAR).
  */
 int dtx_calc_font_distfield(struct dtx_font *fnt);
 
@@ -100,8 +100,11 @@ void dtx_free_glyphmap(struct dtx_glyphmap *gmap);
  */
 int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap);
 
-/* resize a glyphmap by the provided scale factor */
-int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, float scale, int filter);
+/* resize a glyphmap by the provided scale factor fraction snum/sdenom
+ * in order to maintain the power of 2 invariant, scaling fractions are only
+ * allowed to be of the form 1/x or x/1, where x is a power of 2
+ */
+int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int filter);
 
 /* returns a pointer to the raster image of a glyphmap (1 byte per pixel grayscale) */
 unsigned char *dtx_get_glyphmap_image(struct dtx_glyphmap *gmap);
