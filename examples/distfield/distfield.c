@@ -27,7 +27,7 @@ unsigned int create_shader(unsigned int type, const char *sdr);
 struct dtx_font *font, *font_dist;
 float zoom = 1.0;
 
-#define FONT_SZ	40
+#define FONT_SZ	80
 
 
 static const char *vsdr =

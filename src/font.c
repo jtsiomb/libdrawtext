@@ -235,6 +235,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	int i, j;
 	int gx, gy;
 	int total_width, max_width, max_height;
+	int half_pad = opt_padding / 2;
 
 	FT_Set_Char_Size(fnt->face, 0, sz * 64, 72, 72);
 
@@ -307,10 +308,10 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		}
 
 		gmap->glyphs[i].code = i;
-		gmap->glyphs[i].x = gx - 1;
-		gmap->glyphs[i].y = gy - 1;
-		gmap->glyphs[i].width = gwidth + 2;
-		gmap->glyphs[i].height = gheight + 2;
+		gmap->glyphs[i].x = gx - half_pad;
+		gmap->glyphs[i].y = gy - half_pad;
+		gmap->glyphs[i].width = gwidth + half_pad * 2;
+		gmap->glyphs[i].height = gheight + half_pad * 2;
 		gmap->glyphs[i].orig_x = -FTSZ_TO_PIXELS((float)glyph->metrics.horiBearingX) + 1;
 		gmap->glyphs[i].orig_y = FTSZ_TO_PIXELS((float)glyph->metrics.height - glyph->metrics.horiBearingY) + 1;
 		gmap->glyphs[i].advance = FTSZ_TO_PIXELS((float)glyph->metrics.horiAdvance);
