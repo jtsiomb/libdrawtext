@@ -162,7 +162,7 @@ void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend)
 	}
 }
 
-int dtx_calc_font_distfield(struct dtx_font *fnt)
+int dtx_calc_font_distfield(struct dtx_font *fnt, int scale_numer, int scale_denom)
 {
 	struct dtx_glyphmap *gm = fnt->gmaps;
 	while(gm) {
@@ -171,9 +171,10 @@ int dtx_calc_font_distfield(struct dtx_font *fnt)
 			return -1;
 		}
 
-		if(dtx_resize_glyphmap(gm, 1, 2, DTX_LINEAR) == -1) {
+		if(dtx_resize_glyphmap(gm, scale_numer, scale_denom, DTX_LINEAR) == -1) {
 			fprintf(stderr, "%s: failed to resize glyhphmap during distfield conversion\n", __func__);
 		}
+		gm->tex_valid = 0;
 		gm = gm->next;
 	}
 	return 0;
@@ -565,6 +566,7 @@ int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int fil
 
 		glyph = glyph->next;
 	}
+	gmap->ptsize = snum * gmap->ptsize / sdenom;
 	gmap->line_advance *= scale;
 	return 0;
 }

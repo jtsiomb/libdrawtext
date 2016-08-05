@@ -70,9 +70,11 @@ void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend);
 
 /* convert all glyphmaps to distance fields for use with the distance field
  * font rendering algorithm. This is a convenience function which calls
- * dtx_calc_glyphmap_distfield and dtx_resize_glyphmap(..., 1, 2, DTX_LINEAR).
+ * dtx_calc_glyphmap_distfield and
+ * dtx_resize_glyphmap(..., scale_numer, scale_denom, DTX_LINEAR) for each
+ * glyphmap in this font.
  */
-int dtx_calc_font_distfield(struct dtx_font *fnt);
+int dtx_calc_font_distfield(struct dtx_font *fnt, int scale_numer, int scale_denom);
 
 /* Finds the glyphmap that contains the specified character code and matches the requested size
  * Returns null if it hasn't been created (you should call dtx_prepare/dtx_prepare_range).
