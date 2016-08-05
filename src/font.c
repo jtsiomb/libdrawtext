@@ -71,6 +71,8 @@ static void cleanup(void)
 }
 #endif	/* USE_FREETYPE */
 
+static int find_pow2(int x);
+
 struct dtx_font *dtx_open_font(const char *fname, int sz)
 {
 	struct dtx_font *fnt = 0;
@@ -265,6 +267,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	}
 
 	calc_best_size(total_width, max_width, max_height, padding, 1, &gmap->xsz, &gmap->ysz);
+	gmap->xsz_shift = find_pow2(gmap->xsz);
 
 	if(!(gmap->pixels = malloc(gmap->xsz * gmap->ysz))) {
 		free(gmap->glyphs);
@@ -292,7 +295,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		}
 
 		src = glyph->bitmap.buffer;
-		dst = gmap->pixels + gy * gmap->xsz + gx;
+		dst = gmap->pixels + (gy << gmap->xsz_shift) + gx;
 
 		for(j=0; j<(int)glyph->bitmap.rows; j++) {
 			memcpy(dst, src, glyph->bitmap.width);
@@ -349,7 +352,7 @@ static int has_adj_value(struct dtx_glyphmap *gmap, int x, int y, int val)
 		int py = y + adjoffs[i][1];
 
 		if(CHECK_BOUNDS(gmap, px, py)) {
-			unsigned char adj = gmap->pixels[py * gmap->xsz + px];
+			unsigned char adj = gmap->pixels[(py << gmap->xsz_shift) + px];
 			if(adj == cval) {
 				return 1;
 			}
@@ -448,7 +451,7 @@ static unsigned char sample_area(struct dtx_glyphmap *gm, float x, float y, floa
 				continue;
 			}
 
-			sum += gm->pixels[sy * gm->xsz + sx];
+			sum += gm->pixels[(sy << gm->xsz_shift) + sx];
 			++nsamples;
 		}
 	}
@@ -462,7 +465,7 @@ static unsigned char sample_area(struct dtx_glyphmap *gm, float x, float y, floa
 static unsigned char sample_pixel(struct dtx_glyphmap *gm, int x, int y)
 {
 	if(CHECK_BOUNDS(gm, x, y)) {
-		return gm->pixels[y * gm->xsz + x];
+		return gm->pixels[(y << gm->xsz_shift) + x];
 	}
 	return 0;
 }
@@ -543,6 +546,7 @@ int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int fil
 	gmap->pixels = new_pixels;
 	gmap->xsz = nxsz;
 	gmap->ysz = nysz;
+	gmap->xsz_shift = find_pow2(nxsz);
 
 	/* also scale all the metrics accordingly */
 	glyph = gmap->glyphs;
@@ -729,6 +733,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 		fseek(fp, 2, SEEK_CUR);
 	}
 
+	gmap->xsz_shift = find_pow2(gmap->xsz);
 	gmap->cstart = min_code;
 	gmap->cend = max_code + 1;
 	gmap->crange = gmap->cend - gmap->cstart;
@@ -1022,3 +1027,14 @@ static int next_pow2(int x)
 	return x + 1;
 }
 #endif
+
+static int find_pow2(int x)
+{
+	int i;
+	for(i=0; i<sizeof x * CHAR_BIT; i++) {
+		if((1 << i) == x) {
+			return i;
+		}
+	}
+	return 0;
+}
