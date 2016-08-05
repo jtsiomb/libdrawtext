@@ -137,6 +137,9 @@ enum dtx_option {
 	DTX_RASTER_THRESHOLD, /* opaque/transparent threshold  (default: -1. fully opaque glyphs) */
 	DTX_RASTER_BLEND,     /* glyph alpha blending (0 or 1) (default: 0 (off)) */
 
+	/* generic options */
+	DTX_PADDING = 128,    /* padding between glyphs in pixels (default: 8) */
+
 	DTX_FORCE_32BIT_ENUM = 0x7fffffff	/* this is not a valid option */
 };
 
