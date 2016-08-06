@@ -40,7 +40,7 @@ struct vec2 {
 };
 
 #define FONT_SZ	24
-#define SCALE_FACTOR 16
+#define SCALE_FACTOR 8
 
 
 static const char *vsdr =
