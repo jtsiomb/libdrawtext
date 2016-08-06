@@ -4,6 +4,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <GL/glew.h>
 #ifndef __APPLE__
@@ -16,7 +17,10 @@
 
 void disp(void);
 void reshape(int x, int y);
-void keyb(unsigned char key, int x, int y);
+void keydown(unsigned char key, int x, int y);
+void keyup(unsigned char key, int x, int y);
+void mouse(int bn, int st, int x, int y);
+void motion(int x, int y);
 
 unsigned int create_program(const char *vsdr, const char *psdr);
 unsigned int create_shader(unsigned int type, const char *sdr);
@@ -25,9 +29,18 @@ unsigned int create_shader(unsigned int type, const char *sdr);
  * need to create at least one with dtx_open_font (see main).
  */
 struct dtx_font *font, *font_dist;
-float zoom = 1.0;
+int cur_sel = -1;
+float zoom[2] = {1.0, 1.0};
 
-#define FONT_SZ	80
+struct vec2 {
+	float x, y;
+} pos[2] = {
+	{0, -100},
+	{0, 100}
+};
+
+#define FONT_SZ	24
+#define SCALE_FACTOR 16
 
 
 static const char *vsdr =
@@ -39,55 +52,67 @@ static const char *vsdr =
 
 static const char *psdr =
 	"uniform sampler2D tex;\n"
+	"uniform float softness;\n"
 	"void main()\n"
 	"{\n"
 	"\tfloat alpha = texture2D(tex, gl_TexCoord[0].st).a;\n"
-	"\tfloat mask = smoothstep(0.48, 0.5, alpha);\n"
-	"\tvec3 color = vec3(1.0) * smoothstep(0.49, 0.5, alpha);\n"
+	"\tfloat mask = smoothstep(0.5 - softness, 0.5 + softness, alpha);\n"
+	"\tvec3 color = vec3(1.0);// * smoothstep(0.51 - softness, 0.51 + softness, alpha);\n"
 	"\tgl_FragColor.rgb = color;\n"
 	"\tgl_FragColor.a = mask;\n"
 	"}\n";
 
 static unsigned int sdrprog;
+static int uloc_soft = -1;
+static float softness = 0.015;
 
 
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
+
+	dtx_set(DTX_PADDING, 64);
+
+	if(!(font = dtx_open_font_glyphmap("regular.glyphmap")) ||
+			dtx_get_glyphmap_ptsize(dtx_get_glyphmap(font, 0)) != FONT_SZ) {
+		if(!(font = dtx_open_font("sans.ttf", 0))) {
+			return 1;
+		}
+		dtx_prepare_range(font, FONT_SZ * SCALE_FACTOR, 32, 127);	/* printable ASCII range */
+		dtx_resize_glyphmap(dtx_get_glyphmap(font, 0), 1, SCALE_FACTOR, DTX_LINEAR);
+		dtx_save_glyphmap("regular.glyphmap", dtx_get_glyphmap(font, 0));
+	}
+
+	if(!(font_dist = dtx_open_font_glyphmap("distfield.glyphmap")) ||
+			dtx_get_glyphmap_ptsize(dtx_get_glyphmap(font_dist, 0)) != FONT_SZ) {
+		if(!(font_dist = dtx_open_font("sans.ttf", 0))) {
+			return 1;
+		}
+		/* XXX use a large font size for the initial distance field generation
+		 * then resize the resulting glyphmap to 1/8 of its size afterwards.
+		 */
+		dtx_prepare_range(font_dist, FONT_SZ * SCALE_FACTOR, 32, 127); /* printable ASCII range */
+		dtx_calc_font_distfield(font_dist, 1, SCALE_FACTOR);
+		dtx_save_glyphmap("distfield.glyphmap", dtx_get_glyphmap(font_dist, 0));
+	}
+
 	glutInitWindowSize(800, 600);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	glutCreateWindow("libdrawtext example: distance fields");
 
 	glutDisplayFunc(disp);
 	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyb);
+	glutKeyboardFunc(keydown);
+	glutKeyboardUpFunc(keyup);
+	glutMouseFunc(mouse);
+	glutMotionFunc(motion);
 
 	glewInit();
 
-	dtx_set(DTX_PADDING, 16);
-
-	if(!(font = dtx_open_font_glyphmap("regular.glyphmap"))) {
-		if(!(font = dtx_open_font("sans.ttf", 0))) {
-			return 1;
-		}
-		dtx_prepare_range(font, FONT_SZ * 4, 32, 127);	/* printable ASCII range */
-		dtx_resize_glyphmap(dtx_get_font_glyphmap(font, FONT_SZ * 4, 'a'), 1, 4, DTX_LINEAR);
-		dtx_save_glyphmap("regular.glyphmap", dtx_get_font_glyphmap(font, FONT_SZ, 'a'));
-	}
-
-	if(!(font_dist = dtx_open_font_glyphmap("distfield.glyphmap"))) {
-		if(!(font_dist = dtx_open_font("sans.ttf", 0))) {
-			return 1;
-		}
-		/* XXX use a large font size for the initial distance field generation
-		 * then resize the resulting glyphmap to 1/4 of its size afterwards.
-		 */
-		dtx_prepare_range(font_dist, FONT_SZ * 4, 32, 127); /* printable ASCII range */
-		dtx_calc_font_distfield(font_dist, 1, 4);
-		dtx_save_glyphmap("distfield.glyphmap", dtx_get_font_glyphmap(font_dist, FONT_SZ, 'a'));
-	}
 
 	sdrprog = create_program(vsdr, psdr);
+	glUseProgram(sdrprog);
+	uloc_soft = glGetUniformLocation(sdrprog, "softness");
 
 	glutMainLoop();
 	return 0;
@@ -102,23 +127,30 @@ void disp(void)
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glScalef(zoom, zoom, zoom);
 
 	/* regular font rendering */
 	dtx_use_font(font, FONT_SZ);
-	glTranslatef(-dtx_string_width(text) / 2, -120, 0);
-	dtx_string(text);
 
-	glTranslatef(0, 160, 0);
+	glPushMatrix();
+	glTranslatef(pos[0].x - zoom[0] * dtx_string_width(text) / 2, pos[0].y, 0);
+	glScalef(zoom[0], zoom[0], zoom[0]);
+	dtx_string(text);
+	glPopMatrix();
 
 	/* distance field font rendering */
 	dtx_use_font(font_dist, FONT_SZ);
-	/*glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GEQUAL, 0.5);*/
+
+	glPushMatrix();
+	glTranslatef(pos[1].x - zoom[1] * dtx_string_width(text) / 2, pos[1].y, 0);
+	glScalef(zoom[1], zoom[1], zoom[1]);
 	glUseProgram(sdrprog);
+	if(uloc_soft != -1) {
+		glUniform1f(uloc_soft, softness);
+	}
 	dtx_string(text);
-	/*glDisable(GL_ALPHA_TEST);*/
 	glUseProgram(0);
+
+	glPopMatrix();
 
 	glutSwapBuffers();
 }
@@ -132,21 +164,74 @@ void reshape(int x, int y)
 	glOrtho(-x/2, x/2, -y/2, y/2, -1, 1);
 }
 
-void keyb(unsigned char key, int x, int y)
+void keydown(unsigned char key, int x, int y)
 {
 	switch(key) {
 	case 27:
 		exit(0);
 
+	case '1':
+	case '2':
+		cur_sel = key - '1';
+		break;
+
 	case '=':
-		zoom *= 1.2;
+		softness += 0.005;
+		printf("softness: %g\n", softness);
 		glutPostRedisplay();
 		break;
 
 	case '-':
-		zoom *= 0.8;
+		softness -= 0.005;
+		if(softness < 0.0) {
+			softness = 0.0;
+		}
+		printf("softness: %g\n", softness);
 		glutPostRedisplay();
 		break;
+	}
+}
+
+void keyup(unsigned char key, int x, int y)
+{
+	switch(key) {
+	case '1':
+	case '2':
+		cur_sel = -1;
+		break;
+	}
+}
+
+static int bnstate[8];
+static int prev_x, prev_y;
+
+void mouse(int bn, int st, int x, int y)
+{
+	bnstate[bn - GLUT_LEFT] = st == GLUT_DOWN ? 1 : 0;
+	prev_x = x;
+	prev_y = y;
+}
+
+void motion(int x, int y)
+{
+	int dx = x - prev_x;
+	int dy = y - prev_y;
+	prev_x = x;
+	prev_y = y;
+
+	if((!dx && !dy) || cur_sel == -1) return;
+
+	if(bnstate[0]) {
+		pos[cur_sel].x += dx;
+		pos[cur_sel].y -= dy;
+		glutPostRedisplay();
+	}
+	if(bnstate[2]) {
+		zoom[cur_sel] -= dy * 0.1;
+		if(zoom[cur_sel] < 0.01) {
+			zoom[cur_sel] = 0.01;
+		}
+		glutPostRedisplay();
 	}
 }
 

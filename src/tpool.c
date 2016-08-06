@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+
+#ifdef USE_THREADS
 #include <unistd.h>
 #include <sys/time.h>
 #include <pthread.h>
@@ -253,7 +255,7 @@ static void *thread_func(void *args)
 
 	return 0;
 }
-
+#endif	/* USE_THREADS */
 
 /* The following highly platform-specific code detects the number
  * of processors available in the system. It's used by the thread pool

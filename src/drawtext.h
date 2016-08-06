@@ -86,6 +86,11 @@ struct dtx_glyphmap *dtx_get_font_glyphmap(struct dtx_font *fnt, int sz, int cod
  */
 struct dtx_glyphmap *dtx_get_font_glyphmap_range(struct dtx_font *fnt, int sz, int cstart, int cend);
 
+/* returns the number of glyphmaps in this font */
+int dtx_get_num_glyphmaps(struct dtx_font *fnt);
+/* returns the Nth glyphmap of this font */
+struct dtx_glyphmap *dtx_get_glyphmap(struct dtx_font *fnt, int idx);
+
 /* Creates and returns a glyphmap for a particular unicode range and font size.
  * The generated glyphmap is added to the font's list of glyphmaps.
  */
@@ -114,6 +119,8 @@ unsigned char *dtx_get_glyphmap_image(struct dtx_glyphmap *gmap);
 int dtx_get_glyphmap_width(struct dtx_glyphmap *gmap);
 /* returns the height of the glyphmap image in pixels */
 int dtx_get_glyphmap_height(struct dtx_glyphmap *gmap);
+/* returns the point size represented by this glyphmap */
+int dtx_get_glyphmap_ptsize(struct dtx_glyphmap *gmap);
 
 /* The following functions can be used even when the library is compiled without
  * freetype support.

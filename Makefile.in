@@ -22,7 +22,7 @@ else
 endif
 
 CC = gcc
-CFLAGS = -pedantic -Wall $(opt) $(dbg) -fPIC -I$(PREFIX)/include $(ft2_cflags)
+CFLAGS = -pedantic -Wall $(opt) $(dbg) -fPIC -I$(PREFIX)/include $(ft2_cflags) -DUSE_THREADS
 LDFLAGS = -L$(PREFIX)/lib $(ft2_libs) $(libgl) -lpthread
 
 .PHONY: all
