@@ -928,7 +928,7 @@ void dtx_use_font(struct dtx_font *fnt, int sz)
 
 float dtx_line_height(void)
 {
-	struct dtx_glyphmap *gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, '\n');
+	struct dtx_glyphmap *gmap = dtx_get_glyphmap(dtx_font, 0);
 
 	return gmap->line_advance;
 }
