@@ -11,7 +11,7 @@ LDFLAGS = -L. -L/usr/local/lib -ldrawtext
 ifeq ($(shell uname -s), Darwin)
 	lib_so = libdrawtext.dylib
 else
-	lib_so = libdrawtext.so.0.2
+	lib_so = libdrawtext.so.0.3
 endif
 
 $(bin): $(obj) $(lib_so) $(font)
@@ -26,7 +26,7 @@ clean:
 	rm -f $(obj) $(bin) $(lib_so)
 
 .PHONY: install
-install:
+install: $(bin)
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp $(bin) $(DESTDIR)$(PREFIX)/bin/$(bin)
 
