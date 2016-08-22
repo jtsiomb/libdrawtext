@@ -5,8 +5,8 @@ obj = $(src:.c=.o)
 bin = font2glyphmap
 
 CC = gcc
-CFLAGS = -pedantic -Wall -g -I../../src -I/usr/local/include
-LDFLAGS = -L. -L/usr/local/lib -ldrawtext
+CFLAGS = -pedantic -Wall -g -I../../src
+LDFLAGS = -L../.. -Wl,-rpath=../.. -ldrawtext
 
 ifeq ($(shell uname -s), Darwin)
 	lib_so = libdrawtext.dylib
@@ -14,16 +14,12 @@ else
 	lib_so = libdrawtext.so.0.3
 endif
 
-$(bin): $(obj) $(lib_so) $(font)
+$(bin): $(obj) ../../$(lib_so) $(font)
 	$(CC) -o $@ $(obj) $(LDFLAGS)
-
-$(lib_so): ../../$(lib_so)
-	rm -f $@
-	ln -s $< $@
 
 .PHONY: clean
 clean:
-	rm -f $(obj) $(bin) $(lib_so)
+	rm -f $(obj) $(bin)
 
 .PHONY: install
 install: $(bin)

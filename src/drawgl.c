@@ -182,12 +182,18 @@ static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
+		gmap->tex_valid = 0;
+	}
+
+	if(!gmap->tex_valid) {
+		glBindTexture(GL_TEXTURE_2D, gmap->tex);
 #ifdef GL_ES
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, gmap->xsz, gmap->ysz, 0, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 		glGenerateMipmap(GL_TEXTURE_2D);
 #else
 		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_ALPHA, gmap->xsz, gmap->ysz, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 #endif
+		gmap->tex_valid = 1;
 	}
 
 	if(font_tex != gmap->tex) {

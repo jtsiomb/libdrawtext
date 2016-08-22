@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2014  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -33,9 +33,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include "drawtext.h"
 #include "drawtext_impl.h"
+#include "tpool.h"
 
 #define FTSZ_TO_PIXELS(x)	((x) / 64)
 #define MAX_IMG_WIDTH		4096
+
+static int opt_padding = 8;
 
 
 #ifdef USE_FREETYPE
@@ -70,6 +73,8 @@ static void cleanup(void)
 	}
 }
 #endif	/* USE_FREETYPE */
+
+static int find_pow2(int x);
 
 struct dtx_font *dtx_open_font(const char *fname, int sz)
 {
@@ -160,6 +165,24 @@ void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend)
 	}
 }
 
+int dtx_calc_font_distfield(struct dtx_font *fnt, int scale_numer, int scale_denom)
+{
+	struct dtx_glyphmap *gm = fnt->gmaps;
+	while(gm) {
+		if(dtx_calc_glyphmap_distfield(gm) == -1) {
+			fprintf(stderr, "%s failed to create distfield glyphmap\n", __func__);
+			return -1;
+		}
+
+		if(dtx_resize_glyphmap(gm, scale_numer, scale_denom, DTX_LINEAR) == -1) {
+			fprintf(stderr, "%s: failed to resize glyhphmap during distfield conversion\n", __func__);
+		}
+		gm->tex_valid = 0;
+		gm = gm->next;
+	}
+	return 0;
+}
+
 struct dtx_glyphmap *dtx_get_font_glyphmap(struct dtx_font *fnt, int sz, int code)
 {
 	struct dtx_glyphmap *gm;
@@ -203,6 +226,26 @@ struct dtx_glyphmap *dtx_get_font_glyphmap_range(struct dtx_font *fnt, int sz, i
 	return gm;
 }
 
+int dtx_get_num_glyphmaps(struct dtx_font *fnt)
+{
+	int count = 0;
+	struct dtx_glyphmap *gm = fnt->gmaps;
+	while(gm) {
+		++count;
+		gm = gm->next;
+	}
+	return count;
+}
+
+struct dtx_glyphmap *dtx_get_glyphmap(struct dtx_font *fnt, int idx)
+{
+	struct dtx_glyphmap *gm = fnt->gmaps;
+	while(gm && idx--) {
+		gm = gm->next;
+	}
+	return gm;
+}
+
 struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int cstart, int cend)
 {
 	struct dtx_glyphmap *gmap = 0;
@@ -211,8 +254,8 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	FT_Face face = fnt->face;
 	int i, j;
 	int gx, gy;
-	int padding = 4;
 	int total_width, max_width, max_height;
+	int half_pad = opt_padding / 2;
 
 	FT_Set_Char_Size(fnt->face, 0, sz * 64, 72, 72);
 
@@ -231,7 +274,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		return 0;
 	}
 
-	total_width = padding;
+	total_width = opt_padding;
 	max_width = max_height = 0;
 
 	for(i=0; i<gmap->crange; i++) {
@@ -244,10 +287,11 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		if(w > max_width) max_width = w;
 		if(h > max_height) max_height = h;
 
-		total_width += w + padding;
+		total_width += w + opt_padding;
 	}
 
-	calc_best_size(total_width, max_width, max_height, padding, 1, &gmap->xsz, &gmap->ysz);
+	calc_best_size(total_width, max_width, max_height, opt_padding, 1, &gmap->xsz, &gmap->ysz);
+	gmap->xsz_shift = find_pow2(gmap->xsz);
 
 	if(!(gmap->pixels = malloc(gmap->xsz * gmap->ysz))) {
 		free(gmap->glyphs);
@@ -256,8 +300,8 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	}
 	memset(gmap->pixels, 0, gmap->xsz * gmap->ysz);
 
-	gx = padding;
-	gy = padding;
+	gx = opt_padding;
+	gy = opt_padding;
 
 	for(i=0; i<gmap->crange; i++) {
 		float gwidth, gheight;
@@ -269,13 +313,13 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		gwidth = FTSZ_TO_PIXELS((float)glyph->metrics.width);
 		gheight = FTSZ_TO_PIXELS((float)glyph->metrics.height);
 
-		if(gx > gmap->xsz - gwidth - padding) {
-			gx = padding;
-			gy += max_height + padding;
+		if(gx > gmap->xsz - gwidth - opt_padding) {
+			gx = opt_padding;
+			gy += max_height + opt_padding;
 		}
 
 		src = glyph->bitmap.buffer;
-		dst = gmap->pixels + gy * gmap->xsz + gx;
+		dst = gmap->pixels + (gy << gmap->xsz_shift) + gx;
 
 		for(j=0; j<(int)glyph->bitmap.rows; j++) {
 			memcpy(dst, src, glyph->bitmap.width);
@@ -284,10 +328,10 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		}
 
 		gmap->glyphs[i].code = i;
-		gmap->glyphs[i].x = gx - 1;
-		gmap->glyphs[i].y = gy - 1;
-		gmap->glyphs[i].width = gwidth + 2;
-		gmap->glyphs[i].height = gheight + 2;
+		gmap->glyphs[i].x = gx - half_pad;
+		gmap->glyphs[i].y = gy - half_pad;
+		gmap->glyphs[i].width = gwidth + half_pad * 2;
+		gmap->glyphs[i].height = gheight + half_pad * 2;
 		gmap->glyphs[i].orig_x = -FTSZ_TO_PIXELS((float)glyph->metrics.horiBearingX) + 1;
 		gmap->glyphs[i].orig_y = FTSZ_TO_PIXELS((float)glyph->metrics.height - glyph->metrics.horiBearingY) + 1;
 		gmap->glyphs[i].advance = FTSZ_TO_PIXELS((float)glyph->metrics.horiAdvance);
@@ -297,7 +341,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		gmap->glyphs[i].nwidth = (float)gmap->glyphs[i].width / (float)gmap->xsz;
 		gmap->glyphs[i].nheight = (float)gmap->glyphs[i].height / (float)gmap->ysz;
 
-		gx += gwidth + padding;
+		gx += gwidth + opt_padding;
 	}
 
 	/* add it to the glyphmaps list of the font */
@@ -316,6 +360,284 @@ void dtx_free_glyphmap(struct dtx_glyphmap *gmap)
 	}
 }
 
+#define CHECK_BOUNDS(gm, x, y) ((x) >= 0 && (x) < (gm)->xsz && (y) >= 0 && (y) < (gm)->ysz)
+#define GET_PIXEL(gm, x, y) ((gm)->pixels[((y) << (gm)->xsz_shift) + (x)])
+
+static int calc_distance(struct dtx_glyphmap *gmap, int x, int y, int max_dist)
+{
+	int i, j, startx, starty, endx, endy, px, py;
+	int min_distsq = INT_MAX;
+	unsigned char cpix = GET_PIXEL(gmap, x, y);
+	int dist;
+
+	if(max_dist > 128) max_dist = 128;
+
+	startx = x >= max_dist ? x - max_dist : 0;
+	starty = y >= max_dist ? y - max_dist : 0;
+	endx = x + max_dist < gmap->xsz ? x + max_dist : gmap->xsz - 1;
+	endy = y + max_dist < gmap->ysz ? y + max_dist : gmap->ysz - 1;
+
+	/* try the cardinal directions first to find the search bounding box */
+	for(i=0; i<4; i++) {
+		int max_dist = x - startx;
+		for(j=0; j<max_dist; j++) {
+			if(GET_PIXEL(gmap, x - j, y) != cpix) {
+				startx = x - j;
+				break;
+			}
+		}
+		max_dist = endx + 1 - x;
+		for(j=0; j<max_dist; j++) {
+			if(GET_PIXEL(gmap, x + j, y) != cpix) {
+				endx = x + j;
+				break;
+			}
+		}
+		max_dist = y - starty;
+		for(j=0; j<max_dist; j++) {
+			if(GET_PIXEL(gmap, x, y - j) != cpix) {
+				starty = y - j;
+				break;
+			}
+		}
+		max_dist = endy + 1 - y;
+		for(j=0; j<max_dist; j++) {
+			if(GET_PIXEL(gmap, x, y + j) != cpix) {
+				endy = y + j;
+				break;
+			}
+		}
+	}
+
+	/* find the minimum squared distance inside the bounding box */
+	int bwidth = endx + 1 - startx;
+	int bheight = endy + 1 - starty;
+
+	py = starty;
+	for(i=0; i<bheight; i++) {
+		px = startx;
+		for(j=0; j<bwidth; j++) {
+			if(GET_PIXEL(gmap, px, py) != cpix) {
+				int dx = px - x;
+				int dy = py - y;
+				int distsq = dx * dx + dy * dy;
+
+				if(distsq < min_distsq) {
+					min_distsq = distsq;
+				}
+			}
+			++px;
+		}
+		++py;
+	}
+
+	dist = (int)sqrt(min_distsq);
+	if(dist > 127) dist = 127;
+
+	return cpix ? dist + 128 : 127 - dist;
+}
+
+struct distcalc_data {
+	struct dtx_glyphmap *gmap;
+	int scanline;
+	unsigned char *pixels;
+};
+
+static void distcalc_func(void *cls)
+{
+	int i;
+	struct distcalc_data *data = cls;
+	struct dtx_glyphmap *gmap = data->gmap;
+
+	printf("scanline %d of %d\n", data->scanline + 1, gmap->ysz);
+	for(i=0; i<gmap->xsz; i++) {
+		*data->pixels++ = calc_distance(gmap, i, data->scanline, 64);
+	}
+}
+
+int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
+{
+	int i, num_pixels = gmap->xsz * gmap->ysz;
+	unsigned char *new_pixels;
+	unsigned char *dptr;
+#ifdef USE_THREADS
+	struct thread_pool *tpool = 0;
+	struct distcalc_data *data = 0;
+#endif
+
+	/* first quantize the glyphmap to 1bit */
+	dptr = gmap->pixels;
+	for(i=0; i<num_pixels; i++) {
+		unsigned char c = *dptr;
+		*dptr++ = c < 128 ? 0 : 255;
+	}
+
+	if(!(new_pixels = malloc(num_pixels))) {
+		fprintf(stderr, "%s: failed to allocate %dx%d pixel buffer\n", __func__, gmap->xsz, gmap->ysz);
+		return -1;
+	}
+	dptr = new_pixels;
+
+#ifdef USE_THREADS
+	tpool = tpool_create(0);
+	data = malloc(sizeof *data * gmap->ysz);
+
+	if(tpool) {
+		for(i=0; i<gmap->ysz; i++) {
+			data[i].gmap = gmap;
+			data[i].scanline = i;
+			data[i].pixels = new_pixels + (i << gmap->xsz_shift);
+			tpool_enqueue(tpool, data + i, distcalc_func, 0);
+		}
+		tpool_wait(tpool);
+		tpool_destroy(tpool);
+		free(data);
+	} else
+#endif	/* USE_THREADS */
+	{
+		for(i=0; i<gmap->ysz; i++) {
+			struct distcalc_data d;
+			d.gmap = gmap;
+			d.scanline = i;
+			d.pixels = new_pixels + (i << gmap->xsz_shift);
+			distcalc_func(&d);
+		}
+	}
+
+	free(gmap->pixels);
+	gmap->pixels = new_pixels;
+	return 0;
+}
+
+static unsigned char sample_area(struct dtx_glyphmap *gm, float x, float y, float area)
+{
+	int i, j;
+	int ksz = (int)(area + 0.5);
+	int half_ksz = ksz / 2;
+
+	int sum = 0, nsamples = 0;
+
+	for(i=0; i<ksz; i++) {
+		for(j=0; j<ksz; j++) {
+			int sx = x + j - half_ksz;
+			int sy = y + i - half_ksz;
+
+			if(sx < 0 || sx >= gm->xsz || sy < 0 || sy >= gm->ysz) {
+				continue;
+			}
+
+			sum += gm->pixels[(sy << gm->xsz_shift) + sx];
+			++nsamples;
+		}
+	}
+
+	if(nsamples != 0) {
+		sum /= nsamples;
+	}
+	return sum > 255 ? 255 : sum;
+}
+
+static unsigned char sample_pixel(struct dtx_glyphmap *gm, int x, int y)
+{
+	if(CHECK_BOUNDS(gm, x, y)) {
+		return gm->pixels[(y << gm->xsz_shift) + x];
+	}
+	return 0;
+}
+
+static int count_bits(int x)
+{
+	int i, n = 0;
+	for(i=0; i<sizeof x * CHAR_BIT; i++) {
+		n += x & 1;
+		x >>= 1;
+	}
+	return n;
+}
+
+int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int filter)
+{
+	int i, j, nxsz, nysz;
+	unsigned char *dptr, *new_pixels;
+
+	if(snum == sdenom) return 0;
+
+	if((count_bits(snum) | count_bits(sdenom)) != 1) {
+		fprintf(stderr, "%s: invalid scale fraction %d/%d (not power of 2)\n", __func__, snum, sdenom);
+		return -1;
+	}
+
+	/* normalize the fraction */
+	if(snum > sdenom) {
+		snum /= sdenom;
+		sdenom /= sdenom;
+	} else {
+		snum /= snum;
+		sdenom /= snum;
+	}
+
+	if(snum != 1 && sdenom != 1) {
+		fprintf(stderr, "%s: invalid scale fraction %d/%d (neither is 1)\n", __func__, snum, sdenom);
+		return -1;
+	}
+
+	nxsz = snum * gmap->xsz / sdenom;
+	nysz = snum * gmap->ysz / sdenom;
+
+	if(nxsz < 1 || nysz < 1) {
+		return -1;
+	}
+
+	new_pixels = malloc(nxsz * nysz);
+	if(!new_pixels) {
+		fprintf(stderr, "%s: failed to allocate %dx%d pixel buffer\n", __func__, nxsz, nysz);
+		return -1;
+	}
+
+	dptr = new_pixels;
+
+	float scale = (float)snum / (float)sdenom;
+	float inv_scale = 1.0 / scale;
+	float area = scale <= 1.0 ? inv_scale : 2.0;
+
+	if(filter == DTX_NEAREST) {
+		/* no filtering, nearest neighbor */
+		for(i=0; i<nysz; i++) {
+			for(j=0; j<nxsz; j++) {
+				*dptr++ = sample_pixel(gmap, j * inv_scale, i * inv_scale);
+			}
+		}
+	} else {
+		/* bilinear filtering */
+		for(i=0; i<nysz; i++) {
+			for(j=0; j<nxsz; j++) {
+				*dptr++ = sample_area(gmap, j * inv_scale, i * inv_scale, area);
+			}
+		}
+	}
+
+	free(gmap->pixels);
+	gmap->pixels = new_pixels;
+	gmap->xsz = nxsz;
+	gmap->ysz = nysz;
+	gmap->xsz_shift = find_pow2(nxsz);
+
+	/* also scale all the metrics accordingly */
+	for(i=0; i<gmap->crange; i++) {
+		struct glyph *g = gmap->glyphs + i;
+		g->x *= scale;
+		g->y *= scale;
+		g->width *= scale;
+		g->height *= scale;
+		g->orig_x *= scale;
+		g->orig_y *= scale;
+		g->advance *= scale;
+	}
+	gmap->ptsize = snum * gmap->ptsize / sdenom;
+	gmap->line_advance *= scale;
+	return 0;
+}
+
 unsigned char *dtx_get_glyphmap_pixels(struct dtx_glyphmap *gmap)
 {
 	return gmap->pixels;
@@ -329,6 +651,11 @@ int dtx_get_glyphmap_width(struct dtx_glyphmap *gmap)
 int dtx_get_glyphmap_height(struct dtx_glyphmap *gmap)
 {
 	return gmap->ysz;
+}
+
+int dtx_get_glyphmap_ptsize(struct dtx_glyphmap *gmap)
+{
+	return gmap->ptsize;
 }
 
 struct dtx_glyphmap *dtx_load_glyphmap(const char *fname)
@@ -480,6 +807,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 		fseek(fp, 2, SEEK_CUR);
 	}
 
+	gmap->xsz_shift = find_pow2(gmap->xsz);
 	gmap->cstart = min_code;
 	gmap->cend = max_code + 1;
 	gmap->crange = gmap->cend - gmap->cstart;
@@ -531,8 +859,8 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 	fprintf(fp, "# size: %d\n", gmap->ptsize);
 	fprintf(fp, "# advance: %g\n", gmap->line_advance);
 	for(i=0; i<gmap->crange; i++) {
-		fprintf(fp, "# %d: %gx%g+%g+%g o:%g,%g adv:%g\n", g->code, g->width, g->height, g->x, g->y,
-				g->orig_x, g->orig_y, g->advance);
+		fprintf(fp, "# %d: %gx%g+%g+%g o:%g,%g adv:%g\n", g->code + gmap->cstart,
+				g->width, g->height, g->x, g->y, g->orig_x, g->orig_y, g->advance);
 		g++;
 	}
 	fprintf(fp, "255\n");
@@ -554,6 +882,40 @@ void dtx_add_glyphmap(struct dtx_font *fnt, struct dtx_glyphmap *gmap)
 }
 
 
+void dtx_set(enum dtx_option opt, int val)
+{
+	switch(opt) {
+	case DTX_PADDING:
+		opt_padding = val;
+		break;
+
+	default:
+		dtx_gl_setopt(opt, val);
+		dtx_rast_setopt(opt, val);
+	}
+}
+
+int dtx_get(enum dtx_option opt)
+{
+	int val;
+
+	switch(opt) {
+	case DTX_PADDING:
+		return opt_padding;
+
+	default:
+		break;
+	}
+
+	if(dtx_gl_getopt(opt, &val) != -1) {
+		return val;
+	}
+	if(dtx_rast_getopt(opt, &val) != -1) {
+		return val;
+	}
+	return -1;
+}
+
 void dtx_use_font(struct dtx_font *fnt, int sz)
 {
 	if(!dtx_drawchar) {
@@ -566,7 +928,7 @@ void dtx_use_font(struct dtx_font *fnt, int sz)
 
 float dtx_line_height(void)
 {
-	struct dtx_glyphmap *gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, '\n');
+	struct dtx_glyphmap *gmap = dtx_get_glyphmap(dtx_font, 0);
 
 	return gmap->line_advance;
 }
@@ -773,3 +1135,14 @@ static int next_pow2(int x)
 	return x + 1;
 }
 #endif
+
+static int find_pow2(int x)
+{
+	int i;
+	for(i=0; i<sizeof x * CHAR_BIT; i++) {
+		if((1 << i) == x) {
+			return i;
+		}
+	}
+	return 0;
+}

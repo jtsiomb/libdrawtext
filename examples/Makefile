@@ -6,6 +6,7 @@ all: $(fonts)
 	$(MAKE) -C unicode
 	$(MAKE) -C raster
 	$(MAKE) -C nofreetype
+	$(MAKE) -C distfield
 
 fonts/linux-libertine.ttf:
 	mkdir -p fonts
@@ -26,8 +27,8 @@ fonts/sazanami-mincho.ttf:
 
 fonts/klingon.ttf:
 	mkdir -p fonts
-	wget http://blogs.msdn.com/cfs-file.ashx/__key/communityserver-components-postattachments/00-00-53-45-33/tlh_2D00_pIqaD_2D00_US.zip
-	unzip -o tlh_2D00_pIqaD_2D00_US.zip
-	rm -f tlh_2D00_pIqaD_2D00_US.zip
-	cp tlh-pIqaD-US/pIqaD.ttf $@
-	rm -rf tlh-pIqaD-US
+	wget https://msdnshared.blob.core.windows.net/media/MSDNBlogsFS/prod.evol.blogs.msdn.com/CommunityServer.Components.PostAttachments/00/10/42/00/93/pIqaD%20Font.zip
+	unzip -o 'pIqaD Font.zip'
+	rm -f 'pIqaD Font.zip'
+	cp 'pIqaD Font/pIqaD.ttf' $@
+	rm -rf 'pIqaD Font'

@@ -31,6 +31,12 @@ enum {
 	DTX_FBF		/* fully buffered */
 };
 
+/* glyphmap resize filtering */
+enum {
+	DTX_NEAREST,
+	DTX_LINEAR
+};
+
 struct dtx_box {
 	float x, y;
 	float width, height;
@@ -62,6 +68,14 @@ void dtx_prepare(struct dtx_font *fnt, int sz);
 /* prepare an arbitrary unicode range glyphmap for the specified font size */
 void dtx_prepare_range(struct dtx_font *fnt, int sz, int cstart, int cend);
 
+/* convert all glyphmaps to distance fields for use with the distance field
+ * font rendering algorithm. This is a convenience function which calls
+ * dtx_calc_glyphmap_distfield and
+ * dtx_resize_glyphmap(..., scale_numer, scale_denom, DTX_LINEAR) for each
+ * glyphmap in this font.
+ */
+int dtx_calc_font_distfield(struct dtx_font *fnt, int scale_numer, int scale_denom);
+
 /* Finds the glyphmap that contains the specified character code and matches the requested size
  * Returns null if it hasn't been created (you should call dtx_prepare/dtx_prepare_range).
  */
@@ -72,6 +86,11 @@ struct dtx_glyphmap *dtx_get_font_glyphmap(struct dtx_font *fnt, int sz, int cod
  */
 struct dtx_glyphmap *dtx_get_font_glyphmap_range(struct dtx_font *fnt, int sz, int cstart, int cend);
 
+/* returns the number of glyphmaps in this font */
+int dtx_get_num_glyphmaps(struct dtx_font *fnt);
+/* returns the Nth glyphmap of this font */
+struct dtx_glyphmap *dtx_get_glyphmap(struct dtx_font *fnt, int idx);
+
 /* Creates and returns a glyphmap for a particular unicode range and font size.
  * The generated glyphmap is added to the font's list of glyphmaps.
  */
@@ -79,12 +98,29 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 /* free a glyphmap */
 void dtx_free_glyphmap(struct dtx_glyphmap *gmap);
 
+/* converts a glyphmap to a distance field glyphmap, for use with the distance
+ * field font rendering algorithm.
+ *
+ * It is recommended to use a fairly large font size glyphmap for this, and
+ * then shrink the resulting distance field glyphmap as needed, with
+ * dtx_resize_glyphmap
+ */
+int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap);
+
+/* resize a glyphmap by the provided scale factor fraction snum/sdenom
+ * in order to maintain the power of 2 invariant, scaling fractions are only
+ * allowed to be of the form 1/x or x/1, where x is a power of 2
+ */
+int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int filter);
+
 /* returns a pointer to the raster image of a glyphmap (1 byte per pixel grayscale) */
 unsigned char *dtx_get_glyphmap_image(struct dtx_glyphmap *gmap);
 /* returns the width of the glyphmap image in pixels */
 int dtx_get_glyphmap_width(struct dtx_glyphmap *gmap);
 /* returns the height of the glyphmap image in pixels */
 int dtx_get_glyphmap_height(struct dtx_glyphmap *gmap);
+/* returns the point size represented by this glyphmap */
+int dtx_get_glyphmap_ptsize(struct dtx_glyphmap *gmap);
 
 /* The following functions can be used even when the library is compiled without
  * freetype support.
@@ -107,6 +143,9 @@ enum dtx_option {
 	/* options for the raster renderer */
 	DTX_RASTER_THRESHOLD, /* opaque/transparent threshold  (default: -1. fully opaque glyphs) */
 	DTX_RASTER_BLEND,     /* glyph alpha blending (0 or 1) (default: 0 (off)) */
+
+	/* generic options */
+	DTX_PADDING = 128,    /* padding between glyphs in pixels (default: 8) */
 
 	DTX_FORCE_32BIT_ENUM = 0x7fffffff	/* this is not a valid option */
 };
