@@ -1041,8 +1041,9 @@ float dtx_char_pos(const char *str, int n)
 		code = dtx_utf8_char_code(str);
 		str = dtx_utf8_next_char((char*)str);
 
-		gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code);
-		pos += gmap->glyphs[code - gmap->cstart].advance;
+		if((gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
+			pos += gmap->glyphs[code - gmap->cstart].advance;
+		}
 	}
 	return pos;
 }
@@ -1057,11 +1058,12 @@ int dtx_char_at_pt(const char *str, float pt)
 		int code = dtx_utf8_char_code(str);
 		str = dtx_utf8_next_char((char*)str);
 
-		gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code);
-		pos += gmap->glyphs[code - gmap->cstart].advance;
+		if((gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
+			pos += gmap->glyphs[code - gmap->cstart].advance;
 
-		if(fabs(pt - prev_pos) < fabs(pt - pos)) {
-			break;
+			if(fabs(pt - prev_pos) < fabs(pt - pos)) {
+				break;
+			}
 		}
 		prev_pos = pos;
 	}
