@@ -16,6 +16,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 #ifdef _MSC_VER
 #include <malloc.h>
@@ -46,6 +47,11 @@ void dtx_color(float r, float g, float b, float a)
 
 void dtx_string(const char *str)
 {
+	dtx_substring(str, 0, strlen(str));
+}
+
+void dtx_substring(const char *str, int start, int end)
+{
 	int should_flush = dtx_buf_mode == DTX_NBF;
 	float pos_x = dtx_cur_offset[0];
 	float pos_y = dtx_cur_offset[1];
@@ -54,7 +60,10 @@ void dtx_string(const char *str)
 		return;
 	}
 
-	while(*str) {
+	str += start;
+	end -= start;
+
+	while(*str && --end >= 0) {
 		str = dtx_drawchar(str, &pos_x, &pos_y, &should_flush);
 	}
 

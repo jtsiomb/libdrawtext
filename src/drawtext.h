@@ -184,8 +184,8 @@ void dtx_draw_buffering(int mode);
  * data. By default both are -1 which means you don't have to use a shader, and if you
  * do they are accessible through gl_Vertex and gl_MultiTexCoord0, as usual.
  *
- * NOTE: If you are using OpenGL ES 2.x or OpenGL >= 3.1 pure (non-compatibility) context
- * you must specify valid attribute indices.
+ * NOTE: If you are using OpenGL ES 2.x or OpenGL >= 3.1 core (non-compatibility)
+ * context you must specify valid attribute indices.
  *
  * NOTE2: equivalent to:
  *    dtx_set(DTX_GL_ATTR_VERTEX, vert_attr);
@@ -197,6 +197,7 @@ void dtx_vertex_attribs(int vert_attr, int tex_attr);
 void dtx_glyph(int code);
 /* draws a utf-8 string starting at the origin. \n \r and \t are handled appropriately. */
 void dtx_string(const char *str);
+void dtx_substring(const char *str, int start, int end);
 
 void dtx_printf(const char *fmt, ...);
 
