@@ -963,6 +963,11 @@ float dtx_glyph_height(int code)
 
 void dtx_string_box(const char *str, struct dtx_box *box)
 {
+	dtx_substring_box(str, 0, strlen(str), box);
+}
+
+void dtx_substring_box(const char *str, int start, int end, struct dtx_box *box)
+{
 	int code;
 	float pos_x = 0.0f, pos_y = 0.0f;
 	struct glyph *g = 0;
@@ -971,7 +976,10 @@ void dtx_string_box(const char *str, struct dtx_box *box)
 	x0 = y0 = FLT_MAX;
 	x1 = y1 = -FLT_MAX;
 
-	while(*str) {
+	str += start;
+	end -= start;
+
+	while(*str && --end >= 0) {
 		float px, py;
 		struct dtx_glyphmap *gmap;
 

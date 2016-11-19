@@ -246,6 +246,7 @@ float dtx_glyph_height(int code);
 
 /* rendered dimensions of a string */
 void dtx_string_box(const char *str, struct dtx_box *box);
+void dtx_substring_box(const char *str, int start, int end, struct dtx_box *box);
 float dtx_string_width(const char *str);
 float dtx_string_height(const char *str);
 
