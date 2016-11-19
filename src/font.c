@@ -1031,12 +1031,14 @@ float dtx_string_height(const char *str)
 
 float dtx_char_pos(const char *str, int n)
 {
-	int i;
+	int i, code;
 	float pos = 0.0;
 	struct dtx_glyphmap *gmap;
 
 	for(i=0; i<n; i++) {
-		int code = dtx_utf8_char_code(str);
+		if(!*str) break;
+
+		code = dtx_utf8_char_code(str);
 		str = dtx_utf8_next_char((char*)str);
 
 		gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code);
