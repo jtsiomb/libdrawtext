@@ -60,8 +60,12 @@ void dtx_substring(const char *str, int start, int end)
 		return;
 	}
 
-	str += start;
-	end -= start;
+	/* skip start characters */
+	while(*str && start > 0) {
+		str = dtx_utf8_next_char((char*)str);
+		--start;
+		--end;
+	}
 
 	while(*str && --end >= 0) {
 		str = dtx_drawchar(str, &pos_x, &pos_y, &should_flush);
