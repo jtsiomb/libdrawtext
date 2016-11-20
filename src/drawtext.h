@@ -210,14 +210,20 @@ void dtx_flush(void);
 /* returns a pointer to the next character in a utf-8 stream */
 char *dtx_utf8_next_char(char *str);
 
+/* returns a pointer to the previous character in a utf-8 stream */
+char *dtx_utf8_prev_char(char *ptr, char *first);
+
 /* returns the unicode character codepoint of the utf-8 character starting at str */
 int dtx_utf8_char_code(const char *str);
 
 /* returns the number of bytes of the utf-8 character starting at str */
 int dtx_utf8_nbytes(const char *str);
 
-/* returns the number of utf-8 character in a zero-terminated utf-8 string */
+/* returns the number of utf-8 characters in a zero-terminated utf-8 string */
 int dtx_utf8_char_count(const char *str);
+
+/* returns the number of utf-8 characters in the next N bytes starting from str */
+int dtx_utf8_char_count_range(const char *str, int nbytes);
 
 /* Converts a unicode code-point to a utf-8 character by filling in the buffer
  * passed at the second argument, and returns the number of bytes taken by that

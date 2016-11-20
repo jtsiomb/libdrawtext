@@ -44,6 +44,14 @@ char *dtx_utf8_next_char(char *str)
 	return str + dtx_utf8_nbytes(str);
 }
 
+char *dtx_utf8_prev_char(char *ptr, char *first)
+{
+	do {
+		--ptr;
+	} while(!U8_IS_FIRST(*ptr) && ptr > first);
+	return ptr;
+}
+
 int dtx_utf8_char_code(const char *str)
 {
 	int i, nbytes, shift, code = 0;
@@ -98,10 +106,22 @@ int dtx_utf8_char_count(const char *str)
 	int n = 0;
 
 	while(*str) {
-		n++;
+		++n;
 		str = dtx_utf8_next_char((char*)str);
 	}
 	return n;
+}
+
+int dtx_utf8_char_count_range(const char *str, int nbytes)
+{
+	int n = 0;
+	while(*str && nbytes > 0) {
+		char *next = dtx_utf8_next_char((char*)str);
+		++n;
+		nbytes -= next - str;
+		str = next;
+	}
+	return (nbytes < 0 && n > 0) ? n - 1 : n;
 }
 
 size_t dtx_utf8_from_char_code(int code, char *buf)
