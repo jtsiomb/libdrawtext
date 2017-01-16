@@ -108,6 +108,38 @@ struct dtx_font *dtx_open_font(const char *fname, int sz)
 	return fnt;
 }
 
+struct dtx_font *dtx_open_font_from_memory_buffer(const char *buff, int buffLen, int sz)
+{
+	struct dtx_font *fnt = 0;
+
+#ifdef USE_FREETYPE
+	init_freetype();
+
+	if (!(fnt = calloc(1, sizeof *fnt))) {
+		fperror("failed to allocate font structure");
+		return 0;
+	}
+
+	if (FT_New_Memory_Face(ft, buff, buffLen, 0, (FT_Face*)&fnt->face) != 0) {
+		fperror("failed to allocate font structure");
+		return 0;
+	}
+
+	/* pre-create the extended ASCII range glyphmap */
+	if (sz) {
+		dtx_prepare_range(fnt, sz, 0, 256);
+
+		if (!dtx_font) {
+			dtx_use_font(fnt, sz);
+		}
+	}
+#else
+	fprintf(stderr, "ignoring call to dtx_open_font_from_memory_buffer: not compiled with freetype support!\n");
+#endif
+
+	return fnt;
+}
+
 struct dtx_font *dtx_open_font_glyphmap(const char *fname)
 {
 	struct dtx_font *fnt;

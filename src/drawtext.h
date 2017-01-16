@@ -56,6 +56,16 @@ extern "C" {
  * nothing will be rendered.
  */
 struct dtx_font *dtx_open_font(const char *fname, int sz);
+/* Open a truetype/opentype/whatever font from memory buffer.
+*
+* If sz is non-zero, the default ASCII glyphmap at the requested point size is
+* automatically created as well, and ready to use.
+*
+* To use other unicode ranges and different font sizes you must first call
+* dtx_prepare or dtx_prepare_range before issuing any drawing calls, otherwise
+* nothing will be rendered.
+*/
+struct dtx_font *dtx_open_font_from_memory_buffer(const char *buff, int buffLen, int sz);
 /* open a font by loading a precompiled glyphmap (see: dtx_save_glyphmap)
  * this works even when compiled without freetype support
  */

@@ -34,7 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #else
 #define GL_GLEXT_LEGACY		/* don't include glext.h internally in gl.h */
 #include <GL/gl.h>
+#ifndef NO_GLU
 #include <GL/glu.h>
+#endif
 
 #ifdef __unix__
 #define GLX_GLXEXT_LEGACY	/* don't include glxext.h internally in glx.h */
@@ -102,7 +104,7 @@ void dtx_target_opengl(void)
 
 int dtx_gl_setopt(enum dtx_option opt, int val)
 {
-	switch(opt) {
+	switch (opt) {
 	case DTX_GL_ATTR_VERTEX:
 		vattr = val;
 		break;
@@ -120,7 +122,7 @@ int dtx_gl_setopt(enum dtx_option opt, int val)
 
 int dtx_gl_getopt(enum dtx_option opt, int *res)
 {
-	switch(opt) {
+	switch (opt) {
 	case DTX_GL_ATTR_VERTEX:
 		*res = vattr;
 		break;
@@ -138,7 +140,7 @@ int dtx_gl_getopt(enum dtx_option opt, int *res)
 
 static int dtx_gl_init(void)
 {
-	if(qbuf) {
+	if (qbuf) {
 		return 0;	/* already initialized */
 	}
 
@@ -151,7 +153,7 @@ static int dtx_gl_init(void)
 	glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)load_glfunc("glVertexAttribPointer");
 #endif
 
-	if(!(qbuf = malloc(QBUF_SZ * sizeof *qbuf))) {
+	if (!(qbuf = malloc(QBUF_SZ * sizeof *qbuf))) {
 		return -1;
 	}
 	num_quads = 0;
@@ -174,29 +176,37 @@ void dtx_vertex_attribs(int vert_attr, int tex_attr)
 
 static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 {
-	if(!gmap->tex) {
+	if (!gmap->tex) {
 		glGenTextures(1, &gmap->tex);
 		glBindTexture(GL_TEXTURE_2D, gmap->tex);
+#if defined(GL_ES) && !defined(NO_GLU)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+#else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#endif
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
+#if defined(NO_GLU) && !defined(GL_ES)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, gmap->xsz, gmap->ysz, 0, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
+#endif
 		gmap->tex_valid = 0;
 	}
 
-	if(!gmap->tex_valid) {
+	if (!gmap->tex_valid) {
 		glBindTexture(GL_TEXTURE_2D, gmap->tex);
 #ifdef GL_ES
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, gmap->xsz, gmap->ysz, 0, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 		glGenerateMipmap(GL_TEXTURE_2D);
-#else
+#elif !defined(NO_GLU)
 		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_ALPHA, gmap->xsz, gmap->ysz, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
+#else
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gmap->xsz, gmap->ysz, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 #endif
 		gmap->tex_valid = 1;
 	}
 
-	if(font_tex != gmap->tex) {
+	if (font_tex != gmap->tex) {
 		dtx_flush();
 	}
 	font_tex = gmap->tex;
@@ -206,7 +216,7 @@ void dtx_glyph(int code)
 {
 	struct dtx_glyphmap *gmap;
 
-	if(!dtx_font || !(gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
+	if (!dtx_font || !(gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
 		return;
 	}
 	set_glyphmap_texture(gmap);
@@ -222,14 +232,14 @@ static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *sh
 	int code = dtx_utf8_char_code(str);
 	str = dtx_utf8_next_char((char*)str);
 
-	if(dtx_buf_mode == DTX_LBF && code == '\n') {
+	if (dtx_buf_mode == DTX_LBF && code == '\n') {
 		*should_flush = 1;
 	}
 
 	px = *pos_x;
 	py = *pos_y;
 
-	if((gmap = dtx_proc_char(code, pos_x, pos_y))) {
+	if ((gmap = dtx_proc_char(code, pos_x, pos_y))) {
 		int idx = code - gmap->cstart;
 
 		set_glyphmap_texture(gmap);
@@ -262,7 +272,7 @@ static void add_glyph(struct glyph *g, float x, float y)
 	qvertex(qptr->v + 4, x + g->width, y + g->height, g->nx + g->nwidth, g->ny);
 	qvertex(qptr->v + 5, x, y + g->height, g->nx, g->ny);
 
-	if(++num_quads >= QBUF_SZ) {
+	if (++num_quads >= QBUF_SZ) {
 		dtx_flush();
 	}
 }
@@ -271,11 +281,11 @@ static void flush(void)
 {
 	int vbo;
 
-	if(!num_quads) {
+	if (!num_quads) {
 		return;
 	}
 
-	if(glBindBuffer) {
+	if (glBindBuffer) {
 		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
@@ -286,20 +296,22 @@ static void flush(void)
 #endif
 	glBindTexture(GL_TEXTURE_2D, font_tex);
 
-	if(vattr != -1 && glEnableVertexAttribArray) {
+	if (vattr != -1 && glEnableVertexAttribArray) {
 		glEnableVertexAttribArray(vattr);
 		glVertexAttribPointer(vattr, 2, GL_FLOAT, 0, sizeof(struct vertex), qbuf);
 #ifndef GL_ES
-	} else {
+	}
+	else {
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(2, GL_FLOAT, sizeof(struct vertex), qbuf);
 #endif
 	}
-	if(tattr != -1 && glEnableVertexAttribArray) {
+	if (tattr != -1 && glEnableVertexAttribArray) {
 		glEnableVertexAttribArray(tattr);
 		glVertexAttribPointer(tattr, 2, GL_FLOAT, 0, sizeof(struct vertex), &qbuf->v[0].s);
 #ifndef GL_ES
-	} else {
+	}
+	else {
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glTexCoordPointer(2, GL_FLOAT, sizeof(struct vertex), &qbuf->v[0].s);
 #endif
@@ -314,17 +326,19 @@ static void flush(void)
 
 	glDepthMask(1);
 
-	if(vattr != -1 && glDisableVertexAttribArray) {
+	if (vattr != -1 && glDisableVertexAttribArray) {
 		glDisableVertexAttribArray(vattr);
 #ifndef GL_ES
-	} else {
+	}
+	else {
 		glDisableClientState(GL_VERTEX_ARRAY);
 #endif
 	}
-	if(tattr != -1 && glDisableVertexAttribArray) {
+	if (tattr != -1 && glDisableVertexAttribArray) {
 		glDisableVertexAttribArray(tattr);
 #ifndef GL_ES
-	} else {
+	}
+	else {
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 #endif
 	}
@@ -335,7 +349,7 @@ static void flush(void)
 	glDisable(GL_BLEND);
 #endif
 
-	if(glBindBuffer && vbo) {
+	if (glBindBuffer && vbo) {
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	}
 
