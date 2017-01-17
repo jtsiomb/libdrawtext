@@ -187,9 +187,6 @@ static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#if !defined(GL_ES) && defined(NO_GLU)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, gmap->xsz, gmap->ysz, 0, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
-#endif
 		gmap->tex_valid = 0;
 	}
 
@@ -201,7 +198,7 @@ static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 #elif !defined(NO_GLU)
 		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_ALPHA, gmap->xsz, gmap->ysz, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 #else
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gmap->xsz, gmap->ysz, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, gmap->xsz, gmap->ysz, 0, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 #endif
 		gmap->tex_valid = 1;
 	}
