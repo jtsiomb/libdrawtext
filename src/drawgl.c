@@ -34,7 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #else
 #define GL_GLEXT_LEGACY		/* don't include glext.h internally in gl.h */
 #include <GL/gl.h>
+#ifndef NO_GLU
 #include <GL/glu.h>
+#endif
 
 #ifdef __unix__
 #define GLX_GLXEXT_LEGACY	/* don't include glxext.h internally in glx.h */
@@ -177,11 +179,17 @@ static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 	if(!gmap->tex) {
 		glGenTextures(1, &gmap->tex);
 		glBindTexture(GL_TEXTURE_2D, gmap->tex);
+#if !defined(GL_ES) && defined(NO_GLU)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#else
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+#endif
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
+#if !defined(GL_ES) && defined(NO_GLU)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, gmap->xsz, gmap->ysz, 0, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
+#endif
 		gmap->tex_valid = 0;
 	}
 
@@ -190,8 +198,10 @@ static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 #ifdef GL_ES
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, gmap->xsz, gmap->ysz, 0, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 		glGenerateMipmap(GL_TEXTURE_2D);
-#else
+#elif !defined(NO_GLU)
 		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_ALPHA, gmap->xsz, gmap->ysz, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
+#else
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gmap->xsz, gmap->ysz, GL_ALPHA, GL_UNSIGNED_BYTE, gmap->pixels);
 #endif
 		gmap->tex_valid = 1;
 	}
