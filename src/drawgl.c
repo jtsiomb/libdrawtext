@@ -180,6 +180,9 @@ static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 		glGenTextures(1, &gmap->tex);
 		glBindTexture(GL_TEXTURE_2D, gmap->tex);
 #if !defined(GL_ES) && defined(NO_GLU)
+		/* TODO: ideally we want to have mipmaps even without GLU, and we should
+		 * just use SGIS_generate_mipmaps if available
+		 */
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 #else
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
