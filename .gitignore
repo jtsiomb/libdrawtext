@@ -10,4 +10,13 @@ examples/simple/simple
 examples/unicode/unicode
 examples/raster/raster
 examples/nofreetype/nofreetype
+*.txt
+Debug*
+Release*
+.vs/
+*.zip
+*.exe
+*.dll
+*.glyphmap
+usr/
 Makefile

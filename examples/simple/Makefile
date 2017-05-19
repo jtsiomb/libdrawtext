@@ -3,12 +3,15 @@ bin = simple
 root = ../..
 
 CFLAGS = -pedantic -Wall -g -I$(root)/src
-LDFLAGS = -L$(root) -Wl,-rpath=$(root) -ldrawtext $(libgl)
+LDFLAGS = -L$(root) -Wl,-rpath=$(root) -ldrawtext -lfreetype $(libgl)
 
 font = serif.ttf
 
-ifeq ($(shell uname -s), Darwin)
+sys := $(shell uname -s | sed 's/MINGW.*/mingw/')
+ifeq ($(sys), Darwin)
 	libgl = -framework OpenGL -framework GLUT
+else ifeq ($(sys), mingw)
+	libgl = -lopengl32 -lglu32 -lfreeglut
 else
 	libgl = -lGL -lGLU -lglut
 endif
