@@ -14,11 +14,11 @@
 
 struct work_item {
 	void *data;
-	tpool_callback work, done;
+	dtx_tpool_callback work, done;
 	struct work_item *next;
 };
 
-struct thread_pool {
+struct dtx_thread_pool {
 	pthread_t *threads;
 	int num_threads;
 
@@ -37,10 +37,10 @@ struct thread_pool {
 
 static void *thread_func(void *args);
 
-struct thread_pool *tpool_create(int num_threads)
+struct dtx_thread_pool *dtx_tpool_create(int num_threads)
 {
 	int i;
-	struct thread_pool *tpool;
+	struct dtx_thread_pool *tpool;
 
 	if(!(tpool = calloc(1, sizeof *tpool))) {
 		return 0;
@@ -50,7 +50,7 @@ struct thread_pool *tpool_create(int num_threads)
 	pthread_cond_init(&tpool->done_condvar, 0);
 
 	if(num_threads <= 0) {
-		num_threads = tpool_num_processors();
+		num_threads = dtx_tpool_num_processors();
 	}
 	tpool->num_threads = num_threads;
 
@@ -61,25 +61,25 @@ struct thread_pool *tpool_create(int num_threads)
 	for(i=0; i<num_threads; i++) {
 		if(pthread_create(tpool->threads + i, 0, thread_func, tpool) == -1) {
 			tpool->threads[i] = 0;
-			tpool_destroy(tpool);
+			dtx_tpool_destroy(tpool);
 			return 0;
 		}
 	}
 	return tpool;
 }
 
-void tpool_destroy(struct thread_pool *tpool)
+void dtx_tpool_destroy(struct dtx_thread_pool *tpool)
 {
 	int i;
 	if(!tpool) return;
 
-	tpool_clear(tpool);
+	dtx_tpool_clear(tpool);
 	tpool->should_quit = 1;
 
 	pthread_cond_broadcast(&tpool->workq_condvar);
 
 	if(tpool->threads) {
-		printf("thread_pool: waiting for %d worker threads to stop ", tpool->num_threads);
+		printf("dtx_thread_pool: waiting for %d worker threads to stop ", tpool->num_threads);
 		fflush(stdout);
 
 		for(i=0; i<tpool->num_threads; i++) {
@@ -96,19 +96,19 @@ void tpool_destroy(struct thread_pool *tpool)
 	pthread_cond_destroy(&tpool->done_condvar);
 }
 
-void tpool_begin_batch(struct thread_pool *tpool)
+void dtx_tpool_begin_batch(struct dtx_thread_pool *tpool)
 {
 	tpool->in_batch = 1;
 }
 
-void tpool_end_batch(struct thread_pool *tpool)
+void dtx_tpool_end_batch(struct dtx_thread_pool *tpool)
 {
 	tpool->in_batch = 0;
 	pthread_cond_broadcast(&tpool->workq_condvar);
 }
 
-int tpool_enqueue(struct thread_pool *tpool, void *data,
-		tpool_callback work_func, tpool_callback done_func)
+int dtx_tpool_enqueue(struct dtx_thread_pool *tpool, void *data,
+		dtx_tpool_callback work_func, dtx_tpool_callback done_func)
 {
 	struct work_item *job;
 
@@ -136,7 +136,7 @@ int tpool_enqueue(struct thread_pool *tpool, void *data,
 	return 0;
 }
 
-void tpool_clear(struct thread_pool *tpool)
+void dtx_tpool_clear(struct dtx_thread_pool *tpool)
 {
 	pthread_mutex_lock(&tpool->workq_mutex);
 	while(tpool->workq) {
@@ -149,7 +149,7 @@ void tpool_clear(struct thread_pool *tpool)
 	pthread_mutex_unlock(&tpool->workq_mutex);
 }
 
-int tpool_queued_jobs(struct thread_pool *tpool)
+int dtx_tpool_queued_jobs(struct dtx_thread_pool *tpool)
 {
 	int res;
 	pthread_mutex_lock(&tpool->workq_mutex);
@@ -158,7 +158,7 @@ int tpool_queued_jobs(struct thread_pool *tpool)
 	return res;
 }
 
-int tpool_active_jobs(struct thread_pool *tpool)
+int dtx_tpool_active_jobs(struct dtx_thread_pool *tpool)
 {
 	int res;
 	pthread_mutex_lock(&tpool->workq_mutex);
@@ -167,7 +167,7 @@ int tpool_active_jobs(struct thread_pool *tpool)
 	return res;
 }
 
-int tpool_pending_jobs(struct thread_pool *tpool)
+int dtx_tpool_pending_jobs(struct dtx_thread_pool *tpool)
 {
 	int res;
 	pthread_mutex_lock(&tpool->workq_mutex);
@@ -176,7 +176,7 @@ int tpool_pending_jobs(struct thread_pool *tpool)
 	return res;
 }
 
-void tpool_wait(struct thread_pool *tpool)
+void dtx_tpool_wait(struct dtx_thread_pool *tpool)
 {
 	pthread_mutex_lock(&tpool->workq_mutex);
 	while(tpool->nactive || tpool->qsize) {
@@ -185,7 +185,7 @@ void tpool_wait(struct thread_pool *tpool)
 	pthread_mutex_unlock(&tpool->workq_mutex);
 }
 
-void tpool_wait_one(struct thread_pool *tpool)
+void dtx_tpool_wait_one(struct dtx_thread_pool *tpool)
 {
 	int cur_pending;
 	pthread_mutex_lock(&tpool->workq_mutex);
@@ -198,7 +198,7 @@ void tpool_wait_one(struct thread_pool *tpool)
 	pthread_mutex_unlock(&tpool->workq_mutex);
 }
 
-long tpool_timedwait(struct thread_pool *tpool, long timeout)
+long dtx_tpool_timedwait(struct dtx_thread_pool *tpool, long timeout)
 {
 	struct timespec tout_ts;
 	struct timeval tv0, tv;
@@ -223,7 +223,7 @@ long tpool_timedwait(struct thread_pool *tpool, long timeout)
 
 static void *thread_func(void *args)
 {
-	struct thread_pool *tpool = args;
+	struct dtx_thread_pool *tpool = args;
 
 	pthread_mutex_lock(&tpool->workq_mutex);
 	while(!tpool->should_quit) {
@@ -285,7 +285,7 @@ static void *thread_func(void *args)
 #endif
 
 
-int tpool_num_processors(void)
+int dtx_tpool_num_processors(void)
 {
 #if defined(unix) || defined(__unix__)
 # if defined(__bsd__)

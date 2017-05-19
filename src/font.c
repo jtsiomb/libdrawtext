@@ -461,7 +461,7 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 	unsigned char *new_pixels;
 	unsigned char *dptr;
 #ifdef USE_THREADS
-	struct thread_pool *tpool = 0;
+	struct dtx_thread_pool *tpool = 0;
 	struct distcalc_data *data = 0;
 #endif
 
@@ -479,7 +479,7 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 	dptr = new_pixels;
 
 #ifdef USE_THREADS
-	tpool = tpool_create(0);
+	tpool = dtx_tpool_create(0);
 	data = malloc(sizeof *data * gmap->ysz);
 
 	if(tpool) {
@@ -487,10 +487,10 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 			data[i].gmap = gmap;
 			data[i].scanline = i;
 			data[i].pixels = new_pixels + (i << gmap->xsz_shift);
-			tpool_enqueue(tpool, data + i, distcalc_func, 0);
+			dtx_tpool_enqueue(tpool, data + i, distcalc_func, 0);
 		}
-		tpool_wait(tpool);
-		tpool_destroy(tpool);
+		dtx_tpool_wait(tpool);
+		dtx_tpool_destroy(tpool);
 		free(data);
 	} else
 #endif	/* USE_THREADS */
