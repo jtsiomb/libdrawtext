@@ -6,12 +6,23 @@ abi = 0
 rev = 4
 
 lib_a = $(name).a
+sodir = lib
 
-ifeq ($(shell uname -s), Darwin)
+sys := $(shell uname -s | sed 's/MINGW32.*/mingw/')
+ifeq ($(sys), Darwin)
 	lib_so = $(name).dylib
 	sharedopt = -dynamiclib
 
 	libgl = -framework OpenGL
+
+else ifeq ($(sys), mingw)
+	lib_so = lib$(name).dll
+	sharedopt = -shared
+	sodir = bin
+
+	libgl = -lopengl32 -lglu32
+	ft2_libs += -lpng -lz
+
 else
 	soname = $(name).so.$(abi)
 	lib_so = $(soname).$(rev)
@@ -21,7 +32,6 @@ else
 	libgl = -lGL -lGLU
 endif
 
-CC = gcc
 CFLAGS = -pedantic -Wall $(opt) $(dbg) -fPIC -I$(PREFIX)/include $(ft2_cflags) -DUSE_THREADS
 LDFLAGS = -L$(PREFIX)/lib $(ft2_libs) $(libgl) -lpthread
 
@@ -57,22 +67,23 @@ cleandep:
 
 .PHONY: install
 install: $(lib_a) $(lib_so)
-	mkdir -p $(PREFIX)/lib $(PREFIX)/include
-	cp $(lib_a) $(PREFIX)/lib/$(lib_a)
-	cp $(lib_so) $(PREFIX)/lib/$(lib_so)
-	cp src/drawtext.h $(PREFIX)/include/drawtext.h
+	mkdir -p $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(PREFIX)/lib $(DESTDIR)$(PREFIX)/include
+	cp $(lib_a) $(DESTDIR)$(PREFIX)/lib/$(lib_a)
+	cp $(lib_so) $(DESTDIR)$(PREFIX)/$(sodir)/$(lib_so)
+	cp src/drawtext.h $(DESTDIR)$(PREFIX)/include/drawtext.h
 	[ -n "$(ldname)" ] && \
-		rm -f $(PREFIX)/lib/$(ldname) $(PREFIX)/lib/$(soname) && \
-		cd $(PREFIX)/lib && ln -s $(lib_so) $(ldname) && ln -s $(lib_so) $(soname) || true
+		rm -f $(DESTDIR)$(PREFIX)/$(sodir)/$(ldname) $(DESTDIR)$(PREFIX)/$(sodir)/$(soname) && \
+		cd $(DESTDIR)$(PREFIX)/lib && ln -s $(lib_so) $(ldname) && ln -s $(lib_so) $(soname) || true
 
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(PREFIX)/lib/$(lib_a)
-	rm -f $(PREFIX)/lib/$(lib_so)
-	rm -f $(PREFIX)/lib/$(ldname)
-	rm -f $(PREFIX)/lib/$(soname)
-	rm -f $(PREFIX)/include/drawtext.h
+	rm -f $(DESTDIR)$(PREFIX)/include/drawtext.h
+	rm -f $(DESTDIR)$(PREFIX)/lib/$(lib_a)
+	rm -f $(DESTDIR)$(PREFIX)/$(sodir)/$(lib_so)
+	[ -n "$(ldname)" ] && \
+		rm -f $(DESTDIR)$(PREFIX)/$(sodir)/$(ldname) && \
+		rm -f $(DESTDIR)$(PREFIX)/$(sodir)/$(soname) || true
 
 
 .PHONY: both

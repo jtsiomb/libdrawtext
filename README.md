@@ -31,6 +31,26 @@ the GNU Lesser General Public License (LGPL) version 3 (or at your option, any
 later version published by the Free Software Foundation). See COPYING, and
 COPYING.LESSER for details.
 
+Build
+-----
+To build and install `libdrawtext` on UNIX, run the usual:
+
+ ./configure
+ make
+ make install
+
+See `./configure --help` for build-time options. 
+
+To build on windows, you may use the included visual studio project, or use
+mingw, in which case just follow the UNIX instructions above.
+
+To cross-compile for windows with mingw-w64, try the following incantation:
+
+ ./configure --prefix=/usr/i686-w64-mingw32
+ make CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-ar sys=mingw
+ make install sys=mingw
+
+
 Contact
 -------
 Feel free to send in bug reports, patches, and comments to: nuclear@member.fsf.org
