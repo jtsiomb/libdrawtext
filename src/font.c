@@ -680,7 +680,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 	struct glyph *g;
 	int min_code = INT_MAX;
 	int max_code = INT_MIN;
-	int i, max_pixval, num_pixels;
+	int i, max_pixval = 255, num_pixels;
 	int greyscale = 0;
 
 	if(!(gmap = calloc(1, sizeof *gmap))) {
