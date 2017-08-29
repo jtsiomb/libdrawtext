@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#ifdef _MSC_VER
+#ifdef WIN32
 #include <malloc.h>
 #else
 #include <alloca.h>
