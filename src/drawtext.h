@@ -146,6 +146,7 @@ enum dtx_option {
 
 	/* generic options */
 	DTX_PADDING = 128,    /* padding between glyphs in pixels (default: 8) */
+	DTX_SAVE_PPM,         /* let dtx_save_glyphmap* save PPM instead of PGM (0 or 1) (default: 0 (PGM)) */
 
 	DTX_FORCE_32BIT_ENUM = 0x7fffffff	/* this is not a valid option */
 };

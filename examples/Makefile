@@ -15,6 +15,7 @@ fonts/linux-libertine.ttf:
 	cd linlibertine; tar xzvf ../LinLibertineTTF_5.1.3_2011_06_21.tgz
 	rm -f LinLibertineTTF_5.1.3_2011_06_21.tgz
 	cp linlibertine/LinLibertine_R.ttf $@
+	cp linlibertine/LinBiolinum_R.ttf fonts/linux-biolinum.ttf
 	rm -rf linlibertine
 
 fonts/sazanami-mincho.ttf:

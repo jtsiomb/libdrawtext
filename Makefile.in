@@ -8,7 +8,7 @@ rev = 4
 lib_a = $(name).a
 sodir = lib
 
-sys := $(shell uname -s | sed 's/MINGW32.*/mingw/')
+sys := $(shell uname -s | sed 's/MINGW.*/mingw/')
 ifeq ($(sys), Darwin)
 	lib_so = $(name).dylib
 	sharedopt = -dynamiclib
@@ -16,7 +16,7 @@ ifeq ($(sys), Darwin)
 	libgl = -framework OpenGL
 
 else ifeq ($(sys), mingw)
-	lib_so = lib$(name).dll
+	lib_so = $(name).dll
 	sharedopt = -shared
 	sodir = bin
 

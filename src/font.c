@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MAX_IMG_WIDTH		4096
 
 static int opt_padding = 8;
-
+static int opt_save_ppm;
 
 #ifdef USE_FREETYPE
 static int init_freetype(void);
@@ -461,7 +461,7 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 	unsigned char *new_pixels;
 	unsigned char *dptr;
 #ifdef USE_THREADS
-	struct thread_pool *tpool = 0;
+	struct dtx_thread_pool *tpool = 0;
 	struct distcalc_data *data = 0;
 #endif
 
@@ -479,7 +479,7 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 	dptr = new_pixels;
 
 #ifdef USE_THREADS
-	tpool = tpool_create(0);
+	tpool = dtx_tpool_create(0);
 	data = malloc(sizeof *data * gmap->ysz);
 
 	if(tpool) {
@@ -487,10 +487,10 @@ int dtx_calc_glyphmap_distfield(struct dtx_glyphmap *gmap)
 			data[i].gmap = gmap;
 			data[i].scanline = i;
 			data[i].pixels = new_pixels + (i << gmap->xsz_shift);
-			tpool_enqueue(tpool, data + i, distcalc_func, 0);
+			dtx_tpool_enqueue(tpool, data + i, distcalc_func, 0);
 		}
-		tpool_wait(tpool);
-		tpool_destroy(tpool);
+		dtx_tpool_wait(tpool);
+		dtx_tpool_destroy(tpool);
 		free(data);
 	} else
 #endif	/* USE_THREADS */
@@ -681,6 +681,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 	int min_code = INT_MAX;
 	int max_code = INT_MIN;
 	int i, max_pixval, num_pixels;
+	int greyscale = 0;
 
 	if(!(gmap = calloc(1, sizeof *gmap))) {
 		fperror("failed to allocate glyphmap");
@@ -745,10 +746,11 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 		} else {
 			switch(hdr_lines) {
 			case 0:
-				if(0[line] != 'P' || 1[line] != '6') {
+				if(line[0] != 'P' || !(line[1] == '6' || line[1] == '5')) {
 					fprintf(stderr, "%s: invalid file format (magic)\n", __func__);
 					goto err;
 				}
+				greyscale = line[1] == '5';
 				break;
 
 			case 1:
@@ -804,7 +806,9 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 			goto err;
 		}
 		gmap->pixels[i] = 255 * c / max_pixval;
-		fseek(fp, 2, SEEK_CUR);
+		if(!greyscale) {
+			fseek(fp, 2, SEEK_CUR);
+		}
 	}
 
 	gmap->xsz_shift = find_pow2(gmap->xsz);
@@ -855,7 +859,7 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 	int i, num_pixels;
 	struct glyph *g = gmap->glyphs;
 
-	fprintf(fp, "P6\n%d %d\n", gmap->xsz, gmap->ysz);
+	fprintf(fp, "P%d\n%d %d\n", opt_save_ppm ? 6 : 5, gmap->xsz, gmap->ysz);
 	fprintf(fp, "# size: %d\n", gmap->ptsize);
 	fprintf(fp, "# advance: %g\n", gmap->line_advance);
 	for(i=0; i<gmap->crange; i++) {
@@ -869,8 +873,10 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 	for(i=0; i<num_pixels; i++) {
 		int c = gmap->pixels[i];
 		fputc(c, fp);
-		fputc(c, fp);
-		fputc(c, fp);
+		if(opt_save_ppm) {
+			fputc(c, fp);
+			fputc(c, fp);
+		}
 	}
 	return 0;
 }
@@ -889,6 +895,10 @@ void dtx_set(enum dtx_option opt, int val)
 		opt_padding = val;
 		break;
 
+	case DTX_SAVE_PPM:
+		opt_save_ppm = val;
+		break;
+
 	default:
 		dtx_gl_setopt(opt, val);
 		dtx_rast_setopt(opt, val);
@@ -902,6 +912,9 @@ int dtx_get(enum dtx_option opt)
 	switch(opt) {
 	case DTX_PADDING:
 		return opt_padding;
+
+	case DTX_SAVE_PPM:
+		return opt_save_ppm;
 
 	default:
 		break;
