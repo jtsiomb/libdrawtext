@@ -4,12 +4,15 @@ src = $(wildcard src/*.c)
 obj = $(src:.c=.o)
 bin = font2glyphmap
 
-CC = gcc
 CFLAGS = -pedantic -Wall -g -I../../src
 LDFLAGS = -L../.. -Wl,-rpath=../.. -ldrawtext
 
-ifeq ($(shell uname -s), Darwin)
+sys := $(shell uname -s | sed 's/MINGW.*/mingw/')
+ifeq ($(sys), Darwin)
 	lib_so = libdrawtext.dylib
+else ifeq ($(sys), mingw)
+	lib_so = libdrawtext.dll
+	LDFLAGS += -lopengl32 -lglu32 -lfreetype
 else
 	lib_so = libdrawtext.so.0.3
 endif
