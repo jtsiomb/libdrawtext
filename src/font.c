@@ -1143,7 +1143,7 @@ static int calc_best_size(int total_width, int max_gwidth, int max_gheight, int 
 		num_rows += (padding + (max_gwidth + padding) * num_rows + xsz - 1) / xsz;
 
 		ysz = num_rows * (max_gheight + padding) + padding;
-		if(ysz > MAX_IMG_SIZE) continue;
+		if(ysz <= 0 || ysz > MAX_IMG_SIZE) continue;
 
 		if(pow2) {
 			ysz = next_pow2(ysz);
@@ -1155,7 +1155,7 @@ static int calc_best_size(int total_width, int max_gwidth, int max_gheight, int 
 		}
 	}
 
-	if(xsz > MAX_IMG_SIZE || ysz > MAX_IMG_SIZE) {
+	if(xsz > MAX_IMG_SIZE || ysz > MAX_IMG_SIZE || ysz <= 0) {
 		return -1;
 	}
 
