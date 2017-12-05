@@ -370,6 +370,7 @@ void dtx_free_glyphmap(struct dtx_glyphmap *gmap)
 static int calc_distance(struct dtx_glyphmap *gmap, int x, int y, int max_dist)
 {
 	int i, j, startx, starty, endx, endy, px, py;
+	int bwidth, bheight;
 	int min_distsq = INT_MAX;
 	unsigned char cpix = GET_PIXEL(gmap, x, y);
 	int dist;
@@ -414,8 +415,8 @@ static int calc_distance(struct dtx_glyphmap *gmap, int x, int y, int max_dist)
 	}
 
 	/* find the minimum squared distance inside the bounding box */
-	int bwidth = endx + 1 - startx;
-	int bheight = endy + 1 - starty;
+	bwidth = endx + 1 - startx;
+	bheight = endy + 1 - starty;
 
 	py = starty;
 	for(i=0; i<bheight; i++) {
@@ -563,6 +564,7 @@ int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int fil
 {
 	int i, j, nxsz, nysz;
 	unsigned char *dptr, *new_pixels;
+	float scale, inv_scale, area;
 
 	if(snum == sdenom) return 0;
 
@@ -600,9 +602,9 @@ int dtx_resize_glyphmap(struct dtx_glyphmap *gmap, int snum, int sdenom, int fil
 
 	dptr = new_pixels;
 
-	float scale = (float)snum / (float)sdenom;
-	float inv_scale = 1.0 / scale;
-	float area = scale <= 1.0 ? inv_scale : 2.0;
+	scale = (float)snum / (float)sdenom;
+	inv_scale = 1.0 / scale;
+	area = scale <= 1.0 ? inv_scale : 2.0;
 
 	if(filter == DTX_NEAREST) {
 		/* no filtering, nearest neighbor */

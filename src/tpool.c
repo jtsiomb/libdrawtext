@@ -200,11 +200,12 @@ void dtx_tpool_wait_one(struct dtx_thread_pool *tpool)
 
 long dtx_tpool_timedwait(struct dtx_thread_pool *tpool, long timeout)
 {
+	long sec;
 	struct timespec tout_ts;
 	struct timeval tv0, tv;
 	gettimeofday(&tv0, 0);
 
-	long sec = timeout / 1000;
+	sec = timeout / 1000;
 	tout_ts.tv_nsec = tv0.tv_usec * 1000 + (timeout % 1000) * 1000000;
 	tout_ts.tv_sec = tv0.tv_sec + sec;
 

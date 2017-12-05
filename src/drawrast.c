@@ -154,6 +154,7 @@ static void blit_blend(unsigned char *dest, unsigned char *src, int xsz, int ysz
 
 static void draw_glyph(struct glyph *g, float x, float y)
 {
+	unsigned char *dest, *src;
 	int gx = (int)g->x;
 	int gy = (int)g->y;
 	int gwidth = (int)g->width;
@@ -184,8 +185,8 @@ static void draw_glyph(struct glyph *g, float x, float y)
 	if(gwidth <= 0 || gheight <= 0)
 		return;
 
-	unsigned char *dest = fb_pixels + (iy * fb_width + ix) * 4;
-	unsigned char *src = gmap->pixels + gy * gmap->xsz + gx;
+	dest = fb_pixels + (iy * fb_width + ix) * 4;
+	src = gmap->pixels + gy * gmap->xsz + gx;
 
 	if(use_alpha) {
 		blit_blend(dest, src, gwidth, gheight);
