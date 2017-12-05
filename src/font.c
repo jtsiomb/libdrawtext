@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tpool.h"
 
 #define FTSZ_TO_PIXELS(x)	((x) / 64)
-#define MAX_IMG_WIDTH		4096
+#define MAX_IMG_SIZE		8192
 
 static int opt_padding = 8;
 static int opt_save_ppm;
@@ -45,7 +45,7 @@ static int opt_save_ppm;
 static int init_freetype(void);
 static void cleanup(void);
 
-static void calc_best_size(int total_width, int max_gwidth, int max_gheight,
+static int calc_best_size(int total_width, int max_gwidth, int max_gheight,
 		int padding, int pow2, int *imgw, int *imgh);
 static int next_pow2(int x);
 
@@ -290,7 +290,11 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		total_width += w + opt_padding;
 	}
 
-	calc_best_size(total_width, max_width, max_height, opt_padding, 1, &gmap->xsz, &gmap->ysz);
+	if(calc_best_size(total_width, max_width, max_height, opt_padding, 1, &gmap->xsz, &gmap->ysz) == -1) {
+		free(gmap->glyphs);
+		free(gmap);
+		return 0;
+	}
 	gmap->xsz_shift = find_pow2(gmap->xsz);
 
 	if(!(gmap->pixels = malloc(gmap->xsz * gmap->ysz))) {
@@ -1121,12 +1125,17 @@ struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos)
 }
 
 #ifdef USE_FREETYPE
-static void calc_best_size(int total_width, int max_gwidth, int max_gheight, int padding, int pow2, int *imgw, int *imgh)
+static int calc_best_size(int total_width, int max_gwidth, int max_gheight, int padding, int pow2, int *imgw, int *imgh)
 {
 	int xsz, ysz, num_rows;
 	float aspect;
 
-	for(xsz=2; xsz<=MAX_IMG_WIDTH; xsz *= 2) {
+	/* the widest glyph won't fit in the maximum image size */
+	if(max_gwidth > MAX_IMG_SIZE) {
+		return -1;
+	}
+
+	for(xsz=2; xsz<=MAX_IMG_SIZE; xsz *= 2) {
 		num_rows = total_width / xsz + 1;
 
 		/* assume worst case, all last glyphs will float to the next line
@@ -1134,6 +1143,8 @@ static void calc_best_size(int total_width, int max_gwidth, int max_gheight, int
 		num_rows += (padding + (max_gwidth + padding) * num_rows + xsz - 1) / xsz;
 
 		ysz = num_rows * (max_gheight + padding) + padding;
+		if(ysz > MAX_IMG_SIZE) continue;
+
 		if(pow2) {
 			ysz = next_pow2(ysz);
 		}
@@ -1144,12 +1155,13 @@ static void calc_best_size(int total_width, int max_gwidth, int max_gheight, int
 		}
 	}
 
-	if(xsz > MAX_IMG_WIDTH) {
-		xsz = MAX_IMG_WIDTH;
+	if(xsz > MAX_IMG_SIZE || ysz > MAX_IMG_SIZE) {
+		return -1;
 	}
 
 	*imgw = xsz;
 	*imgh = ysz;
+	return 0;
 }
 
 
