@@ -35,9 +35,9 @@ Build
 -----
 To build and install `libdrawtext` on UNIX, run the usual:
 
- ./configure
- make
- make install
+    ./configure
+    make
+    make install
 
 See `./configure --help` for build-time options. 
 
@@ -46,9 +46,9 @@ mingw, in which case just follow the UNIX instructions above.
 
 To cross-compile for windows with mingw-w64, try the following incantation:
 
- ./configure --prefix=/usr/i686-w64-mingw32
- make CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-ar sys=mingw
- make install sys=mingw
+    ./configure --prefix=/usr/i686-w64-mingw32
+    make CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-ar sys=mingw
+    make install sys=mingw
 
 
 Contact
