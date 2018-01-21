@@ -52,6 +52,15 @@ int main(int argc, char **argv)
 			} else if(strcmp(argv[i], "-dist") == 0) {
 				conv_dist = 1;
 
+			} else if(strcmp(argv[i], "-padding") == 0) {
+				char *endp;
+				int pad = strtol(argv[++i], &endp, 10);
+				if(endp == argv[i]) {
+					fprintf(stderr, "-padding must be followed by a number\n");
+					return 1;
+				}
+				dtx_set(DTX_PADDING, pad);
+
 			} else if(strcmp(argv[i], "-scale") == 0) {
 				if(sscanf(argv[++i], "%d/%d", &scale_num, &scale_denom) < 1 || scale_num <= 0) {
 					fprintf(stderr, "-scale must be followed by a non-zero fraction of the form 1/x or x/1\n");
@@ -114,6 +123,7 @@ void print_usage(const char *argv0)
 	printf("  -range <low>-<high>: unicode range (default: ascii)\n");
 	printf("  -dist: convert to distance field glyphmap\n");
 	printf("  -scale <factor>: scale the glyphmap by factor before saving it\n");
+	printf("  -pad <pixels>: padding to leave between glyphs\n");
 	printf("  -help: print usage information and exit\n");
 }
 
