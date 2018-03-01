@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 	int scale_num = -1, scale_denom = 1;
 	int i, font_size = DEF_SIZE, suffix_len = strlen(SUFFIX);
 	struct coderange *clist = 0;
+	char *outfile_override = 0;
 
 	for(i=1; i<argc; i++) {
 		if(argv[i][0] == '-') {
@@ -66,6 +67,10 @@ int main(int argc, char **argv)
 					fprintf(stderr, "-scale must be followed by a non-zero fraction of the form 1/x or x/1\n");
 					return 1;
 				}
+
+			} else if(strcmp(argv[i], "-o") == 0) {
+				outfile_override = argv[++i];
+
 			} else {
 				if(strcmp(argv[i], "-help") != 0 && strcmp(argv[i], "-h") != 0) {
 					fprintf(stderr, "invalid option: %s\n", argv[i]);
@@ -82,31 +87,39 @@ int main(int argc, char **argv)
 				return -1;
 			}
 
-			basename = alloca(strlen(argv[i]) + suffix_len + 1);
-			strcpy(basename, argv[i]);
+			if(outfile_override) {
+				outfile = outfile_override;
+			} else {
+				basename = alloca(strlen(argv[i]) + suffix_len + 1);
+				strcpy(basename, argv[i]);
 
-			if((dotptr = strrchr(basename, '.'))) {
-				*dotptr = 0;
-			}
-			if((lastslash = strrchr(basename, '/'))) {
-				basename = lastslash + 1;
-			}
+				if((dotptr = strrchr(basename, '.'))) {
+					*dotptr = 0;
+				}
+				if((lastslash = strrchr(basename, '/'))) {
+					basename = lastslash + 1;
+				}
 
-			outfile = alloca(strlen(basename) + 64);
+				outfile = alloca(strlen(basename) + 64);
+			}
 
 			if(clist) {
 				while(clist) {
 					struct coderange *r = clist;
 					clist = clist->next;
 
-					sprintf(outfile, "%s_s%d_r%04x-%04x.%s", basename, font_size, r->start, r->end, SUFFIX);
+					if(!outfile_override) {
+						sprintf(outfile, "%s_s%d_r%04x-%04x.%s", basename, font_size, r->start, r->end, SUFFIX);
+					}
 					font2glyphmap(font, argv[i], outfile, font_size, r->start, r->end, conv_dist, scale_num, scale_denom);
 
 					free(r);
 				}
 				clist = 0;
 			} else {
-				sprintf(outfile, "%s_s%d.%s", basename, font_size, SUFFIX);
+				if(!outfile_override) {
+					sprintf(outfile, "%s_s%d.%s", basename, font_size, SUFFIX);
+				}
 				font2glyphmap(font, argv[i], outfile, font_size, -1, -1, conv_dist, scale_num, scale_denom);
 			}
 		}
@@ -124,6 +137,7 @@ void print_usage(const char *argv0)
 	printf("  -dist: convert to distance field glyphmap\n");
 	printf("  -scale <factor>: scale the glyphmap by factor before saving it\n");
 	printf("  -pad <pixels>: padding to leave between glyphs\n");
+	printf("  -o <filename>: output filename\n");
 	printf("  -help: print usage information and exit\n");
 }
 
