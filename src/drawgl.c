@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2018  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -15,6 +15,28 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "drawtext.h"
+#include "drawtext_impl.h"
+
+struct quad {
+	struct dtx_vertex v[6];
+};
+
+struct dtx_glyphmap *cur_gmap;
+
+#define QBUF_SZ		512
+static struct quad *qbuf;
+static int num_quads;
+
+static dtx_user_draw_func user_draw_func;
+static void *user_cls;
+
+static void set_glyphmap_texture(struct dtx_glyphmap *gmap);
+static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush);
+
+static void flush_user(void);
+
+
 #ifndef NO_OPENGL
 #include <stdarg.h>
 #include <math.h>
@@ -46,27 +68,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif	/* __APPLE__ */
 #endif	/* !TARGET_IPHONE */
 
-#include "drawtext.h"
-#include "drawtext_impl.h"
-
-struct vertex {
-	float x, y;
-	float s, t;
-};
-
-struct quad {
-	struct vertex v[6];
-};
-
 static int dtx_gl_init(void);
 static void cleanup(void);
 static void add_glyph(struct glyph *g, float x, float y);
-static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush);
 static void flush(void);
 
-#define QBUF_SZ		512
-static struct quad *qbuf;
-static int num_quads;
 static int vattr = -1;
 static int tattr = -1;
 static int cattr = -1;
@@ -100,6 +106,8 @@ void dtx_target_opengl(void)
 	dtx_gl_init();
 	dtx_drawchar = drawchar;
 	dtx_drawflush = flush;
+
+	user_draw_func = 0;
 }
 
 int dtx_gl_setopt(enum dtx_option opt, int val)
@@ -174,7 +182,7 @@ void dtx_vertex_attribs(int vert_attr, int tex_attr)
 	tattr = tex_attr;
 }
 
-static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
+static void set_glyphmap_texture_gl(struct dtx_glyphmap *gmap)
 {
 	if(!gmap->tex) {
 		glGenTextures(1, &gmap->tex);
@@ -206,76 +214,10 @@ static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
 		gmap->tex_valid = 1;
 	}
 
-	if(font_tex != gmap->tex) {
-		dtx_flush();
-	}
 	font_tex = gmap->tex;
 }
 
-void dtx_glyph(int code)
-{
-	struct dtx_glyphmap *gmap;
 
-	if(!dtx_font || !(gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
-		return;
-	}
-	set_glyphmap_texture(gmap);
-
-	add_glyph(gmap->glyphs + code - gmap->cstart, 0, 0);
-	dtx_flush();
-}
-
-static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush)
-{
-	struct dtx_glyphmap *gmap;
-	float px, py;
-	int code = dtx_utf8_char_code(str);
-	str = dtx_utf8_next_char((char*)str);
-
-	if(dtx_buf_mode == DTX_LBF && code == '\n') {
-		*should_flush = 1;
-	}
-
-	px = *pos_x;
-	py = *pos_y;
-
-	if((gmap = dtx_proc_char(code, pos_x, pos_y))) {
-		int idx = code - gmap->cstart;
-
-		set_glyphmap_texture(gmap);
-		add_glyph(gmap->glyphs + idx, px, py);
-	}
-	return str;
-}
-
-
-static void qvertex(struct vertex *v, float x, float y, float s, float t)
-{
-	v->x = x;
-	v->y = y;
-	v->s = s;
-	v->t = t;
-}
-
-static void add_glyph(struct glyph *g, float x, float y)
-{
-	struct quad *qptr = qbuf + num_quads;
-
-	x -= g->orig_x;
-	y -= g->orig_y;
-
-	qvertex(qptr->v + 0, x, y, g->nx, g->ny + g->nheight);
-	qvertex(qptr->v + 1, x + g->width, y, g->nx + g->nwidth, g->ny + g->nheight);
-	qvertex(qptr->v + 2, x + g->width, y + g->height, g->nx + g->nwidth, g->ny);
-
-	qvertex(qptr->v + 3, x, y, g->nx, g->ny + g->nheight);
-	qvertex(qptr->v + 4, x + g->width, y + g->height, g->nx + g->nwidth, g->ny);
-	qvertex(qptr->v + 5, x, y + g->height, g->nx, g->ny);
-
-	if(++num_quads >= QBUF_SZ) {
-		dtx_flush();
-	}
-}
 
 static void flush(void)
 {
@@ -298,20 +240,20 @@ static void flush(void)
 
 	if(vattr != -1 && glEnableVertexAttribArray) {
 		glEnableVertexAttribArray(vattr);
-		glVertexAttribPointer(vattr, 2, GL_FLOAT, 0, sizeof(struct vertex), qbuf);
+		glVertexAttribPointer(vattr, 2, GL_FLOAT, 0, sizeof(struct dtx_vertex), qbuf);
 #ifndef GL_ES
 	} else {
 		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(2, GL_FLOAT, sizeof(struct vertex), qbuf);
+		glVertexPointer(2, GL_FLOAT, sizeof(struct dtx_vertex), qbuf);
 #endif
 	}
 	if(tattr != -1 && glEnableVertexAttribArray) {
 		glEnableVertexAttribArray(tattr);
-		glVertexAttribPointer(tattr, 2, GL_FLOAT, 0, sizeof(struct vertex), &qbuf->v[0].s);
+		glVertexAttribPointer(tattr, 2, GL_FLOAT, 0, sizeof(struct dtx_vertex), &qbuf->v[0].s);
 #ifndef GL_ES
 	} else {
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glTexCoordPointer(2, GL_FLOAT, sizeof(struct vertex), &qbuf->v[0].s);
+		glTexCoordPointer(2, GL_FLOAT, sizeof(struct dtx_vertex), &qbuf->v[0].s);
 #endif
 	}
 
@@ -358,4 +300,107 @@ void dtx_target_opengl(void) {}
 int dtx_gl_setopt(enum dtx_option opt, int val) { return -1; }
 int dtx_gl_getopt(enum dtx_option opt, int val) { return -1; }
 
+static void set_glyphmap_texture_gl(struct dtx_glyphmap *gmap) {}
+
 #endif	/* !def NO_OPENGL */
+
+void dtx_target_user(dtx_user_draw_func func, void *cls)
+{
+	user_draw_func = func;
+	user_cls = cls;
+
+	dtx_drawchar = drawchar;
+	dtx_drawflush = flush_user;
+}
+
+void dtx_glyph(int code)
+{
+	struct dtx_glyphmap *gmap;
+
+	if(!dtx_font || !(gmap = dtx_get_font_glyphmap(dtx_font, dtx_font_sz, code))) {
+		return;
+	}
+	set_glyphmap_texture(gmap);
+
+	add_glyph(gmap->glyphs + code - gmap->cstart, 0, 0);
+	dtx_flush();
+}
+
+static void set_glyphmap_texture(struct dtx_glyphmap *gmap)
+{
+	if(!user_draw_func) {
+		set_glyphmap_texture_gl(gmap);
+	}
+
+	if(cur_gmap && gmap != cur_gmap) {
+		dtx_flush();
+	}
+	cur_gmap = gmap;
+}
+
+static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush)
+{
+	struct dtx_glyphmap *gmap;
+	float px, py;
+	int code = dtx_utf8_char_code(str);
+	str = dtx_utf8_next_char((char*)str);
+
+	if(dtx_buf_mode == DTX_LBF && code == '\n') {
+		*should_flush = 1;
+	}
+
+	px = *pos_x;
+	py = *pos_y;
+
+	if((gmap = dtx_proc_char(code, pos_x, pos_y))) {
+		int idx = code - gmap->cstart;
+
+		set_glyphmap_texture(gmap);
+		add_glyph(gmap->glyphs + idx, px, py);
+	}
+	return str;
+}
+
+static void qvertex(struct dtx_vertex *v, float x, float y, float s, float t)
+{
+	v->x = x;
+	v->y = y;
+	v->s = s;
+	v->t = t;
+}
+
+static void add_glyph(struct glyph *g, float x, float y)
+{
+	struct quad *qptr = qbuf + num_quads;
+
+	x -= g->orig_x;
+	y -= g->orig_y;
+
+	qvertex(qptr->v + 0, x, y, g->nx, g->ny + g->nheight);
+	qvertex(qptr->v + 1, x + g->width, y, g->nx + g->nwidth, g->ny + g->nheight);
+	qvertex(qptr->v + 2, x + g->width, y + g->height, g->nx + g->nwidth, g->ny);
+
+	qvertex(qptr->v + 3, x, y, g->nx, g->ny + g->nheight);
+	qvertex(qptr->v + 4, x + g->width, y + g->height, g->nx + g->nwidth, g->ny);
+	qvertex(qptr->v + 5, x, y + g->height, g->nx, g->ny);
+
+	if(++num_quads >= QBUF_SZ) {
+		dtx_flush();
+	}
+}
+
+static void flush_user(void)
+{
+	if(!user_draw_func) {
+		return;
+	}
+
+	struct dtx_pixmap pixmap;
+	pixmap.pixels = cur_gmap->pixels;
+	pixmap.width = cur_gmap->xsz;
+	pixmap.height = cur_gmap->ysz;
+	pixmap.udata = cur_gmap->udata;
+
+	user_draw_func((struct dtx_vertex*)qbuf, num_quads * 6, &pixmap, user_cls);
+	cur_gmap->udata = pixmap.udata;
+}

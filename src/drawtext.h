@@ -166,6 +166,36 @@ void dtx_target_opengl(void);
  */
 void dtx_target_raster(unsigned char *pixels, int width, int height);
 
+
+/* data structures passed to user-supplied draw callback */
+struct dtx_vertex { float x, y, s, t; };
+struct dtx_pixmap {
+	unsigned char *pixels;	/* pixel buffer pointer (8 bits per pixel) */
+	int width, height;		/* dimensions of the pixel buffer */
+	void *udata;	/* user-supplied pointer to data associated with this
+					 * pixmap. On the first callback invocation this pointer
+					 * will be null. The user may set it to associate any extra
+					 * data to this pixmap (such as texture structures or
+					 * identifiers). Libdrawtext will never modify this pointer.
+					 */
+};
+
+/* user-defined glyph drawing callback type (set with dtx_target_user)
+ * It's called when the output buffer is flushed, with a pointer to the vertex
+ * buffer that needs to be drawn (every 3 vertices forming a triangle), the
+ * number of vertices in the buffer, and a pointer to the current glyphmap
+ * atlas pixmap (see struct dtx_pixmap above).
+ */
+typedef void (*dtx_user_draw_func)(struct dtx_vertex *v, int vcount,
+		struct dtx_pixmap *pixmap, void *cls);
+
+/* set user-supplied draw callback and optional closure pointer, which will
+ * be passed unchanged as the last argument on every invocation of the draw
+ * callback.
+ */
+void dtx_target_user(dtx_user_draw_func drawfunc, void *cls);
+
+
 /* position of the origin of the first character to be printed */
 void dtx_position(float x, float y);
 /* TODO currently only used by the raster renderer, implement in gl too */

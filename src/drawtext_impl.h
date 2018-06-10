@@ -38,6 +38,7 @@ struct dtx_glyphmap {
 	unsigned char *pixels;
 	unsigned int tex;
 	int tex_valid;
+	void *udata;
 
 	int cstart, cend;	/* character range */
 	int crange;
