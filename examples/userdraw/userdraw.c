@@ -79,8 +79,8 @@ void drawcb(struct dtx_vertex *v, int vcount, struct dtx_pixmap *pixmap, void *c
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, pixmap->width, pixmap->height,
-				0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pixmap->pixels);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, pixmap->width, pixmap->height,
+				0, GL_ALPHA, GL_UNSIGNED_BYTE, pixmap->pixels);
 		pixmap->udata = (void*)tex;
 	}
 
@@ -90,6 +90,7 @@ void drawcb(struct dtx_vertex *v, int vcount, struct dtx_pixmap *pixmap, void *c
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glBegin(GL_TRIANGLES);
+	glColor3f(1, 1, 1);
 	for(i=0; i<vcount; i++) {
 		glTexCoord2f(v->s, v->t);
 		glVertex2f(v->x, v->y);
