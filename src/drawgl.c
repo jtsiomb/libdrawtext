@@ -33,8 +33,8 @@ static void *user_cls;
 
 static void set_glyphmap_texture(struct dtx_glyphmap *gmap);
 static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush);
-
 static void flush_user(void);
+static void add_glyph(struct glyph *g, float x, float y);
 
 
 #ifndef NO_OPENGL
@@ -70,7 +70,6 @@ static void flush_user(void);
 
 static int dtx_gl_init(void);
 static void cleanup(void);
-static void add_glyph(struct glyph *g, float x, float y);
 static void flush(void);
 
 static int vattr = -1;
@@ -298,7 +297,7 @@ static void flush(void)
 /* no-opengl build, define all public gl functions as stubs */
 void dtx_target_opengl(void) {}
 int dtx_gl_setopt(enum dtx_option opt, int val) { return -1; }
-int dtx_gl_getopt(enum dtx_option opt, int val) { return -1; }
+int dtx_gl_getopt(enum dtx_option opt, int *val) { return -1; }
 
 static void set_glyphmap_texture_gl(struct dtx_glyphmap *gmap) {}
 
