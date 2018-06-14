@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2018  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -35,11 +35,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "drawtext_impl.h"
 #include "tpool.h"
 
+struct io {
+	void *data;
+	int size;
+	int (*readchar)(struct io*);
+	void *(*readline)(void *buf, int bsz, struct io*);
+};
+
 #define FTSZ_TO_PIXELS(x)	((x) / 64)
 #define MAX_IMG_SIZE		8192
 
 static int opt_padding = 8;
 static int opt_save_ppm;
+
+static struct dtx_glyphmap *load_glyphmap(struct io *io);
 
 #ifdef USE_FREETYPE
 static int init_freetype(void);
@@ -90,6 +99,7 @@ struct dtx_font *dtx_open_font(const char *fname, int sz)
 
 	if(FT_New_Face(ft, fname, 0, (FT_Face*)&fnt->face) != 0) {
 		fprintf(stderr, "failed to open font file: %s\n", fname);
+		free(fnt);
 		return 0;
 	}
 
@@ -103,6 +113,46 @@ struct dtx_font *dtx_open_font(const char *fname, int sz)
 	}
 #else
 	fprintf(stderr, "ignoring call to dtx_open_font: not compiled with freetype support!\n");
+#endif
+
+	return fnt;
+}
+
+struct dtx_font *dtx_open_font_mem(void *ptr, int memsz, int fontsz)
+{
+	struct dtx_font *fnt = 0;
+
+#ifdef USE_FREETYPE
+	FT_Open_Args args;
+
+	init_freetype();
+
+	if(!(fnt = calloc(1, sizeof *fnt))) {
+		fperror("failed to allocate font structure");
+		return 0;
+	}
+
+	memset(&args, 0, sizeof args);
+	args.flags = FT_OPEN_MEMORY;
+	args.memory_base = ptr;
+	args.memory_size = memsz;
+
+	if(FT_Open_Face(ft, &args, 0, (FT_Face*)&fnt->face) != 0) {
+		fprintf(stderr, "failed to open font from memory\n");
+		free(fnt);
+		return 0;
+	}
+
+	/* pre-create the extended ASCII range glyphmap */
+	if(fontsz) {
+		dtx_prepare_range(fnt, fontsz, 0, 256);
+
+		if(!dtx_font) {
+			dtx_use_font(fnt, fontsz);
+		}
+	}
+#else
+	fprintf(stderr, "ignoring call to dtx_open_font_mem: not compiled with freetype support!\n");
 #endif
 
 	return fnt;
@@ -129,6 +179,29 @@ struct dtx_font *dtx_open_font_glyphmap(const char *fname)
 		if(!dtx_font) {
 			dtx_use_font(fnt, gmap->ptsize);
 		}
+	}
+	return fnt;
+}
+
+struct dtx_font *dtx_open_font_glyphmap_mem(void *ptr, int memsz)
+{
+	struct dtx_font *fnt;
+	struct dtx_glyphmap *gmap;
+
+	if(!(fnt = calloc(1, sizeof *fnt))) {
+		fperror("failed to allocate font structure");
+		return 0;
+	}
+
+	if(!(gmap = dtx_load_glyphmap_mem(ptr, memsz))) {
+		free(fnt);
+		return 0;
+	}
+
+	dtx_add_glyphmap(fnt, gmap);
+
+	if(!dtx_font) {
+		dtx_use_font(fnt, gmap->ptsize);
 	}
 	return fnt;
 }
@@ -677,7 +750,62 @@ struct dtx_glyphmap *dtx_load_glyphmap(const char *fname)
 	return gmap;
 }
 
+
+static int file_readchar(struct io *io)
+{
+	return fgetc(io->data);
+}
+
+static void *file_readline(void *buf, int bsz, struct io *io)
+{
+	return fgets(buf, bsz, io->data);
+}
+
+static int mem_readchar(struct io *io)
+{
+	char *p = io->data;
+
+	if(io->size-- <= 0) {
+		return -1;
+	}
+	io->data = p + 1;
+	return *p;
+}
+
+static void *mem_readline(void *buf, int bsz, struct io *io)
+{
+	int c;
+	char *ptr = buf;
+
+	while(--bsz > 0 && (c = mem_readchar(io)) != -1) {
+		*ptr++ = c;
+		if(c == '\n') break;
+	}
+	*ptr = 0;
+
+	return buf;
+}
+
 struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
+{
+	struct io io;
+	io.data = fp;
+	io.readchar = file_readchar;
+	io.readline = file_readline;
+	return load_glyphmap(&io);
+}
+
+struct dtx_glyphmap *dtx_load_glyphmap_mem(void *ptr, int memsz)
+{
+	struct io io;
+	io.data = ptr;
+	io.size = memsz;
+	io.readchar = mem_readchar;
+	io.readline = mem_readline;
+	return load_glyphmap(&io);
+}
+
+static struct dtx_glyphmap *load_glyphmap(struct io *io)
 {
 	char buf[512];
 	int hdr_lines = 0;
@@ -698,7 +826,7 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 
 	while(hdr_lines < 3) {
 		char *line = buf;
-		if(!fgets(buf, sizeof buf, fp)) {
+		if(!io->readline(buf, sizeof buf, io)) {
 			fperror("unexpected end of file");
 			goto err;
 		}
@@ -806,14 +934,15 @@ struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp)
 	}
 
 	for(i=0; i<num_pixels; i++) {
-		long c = fgetc(fp);
+		long c = io->readchar(io);
 		if(c == -1) {
 			fprintf(stderr, "unexpected end of file while reading pixels\n");
 			goto err;
 		}
 		gmap->pixels[i] = 255 * c / max_pixval;
 		if(!greyscale) {
-			fseek(fp, 2, SEEK_CUR);
+			io->readchar(io);
+			io->readchar(io);
 		}
 	}
 

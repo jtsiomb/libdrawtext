@@ -1,6 +1,6 @@
 /*
 libdrawtext - a simple library for fast text rendering in OpenGL
-Copyright (C) 2011-2016  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2011-2018  John Tsiombikas <nuclear@member.fsf.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -56,10 +56,14 @@ extern "C" {
  * nothing will be rendered.
  */
 struct dtx_font *dtx_open_font(const char *fname, int sz);
+/* same as dtx_open_font, but open from a memory buffer instead of a file */
+struct dtx_font *dtx_open_font_mem(void *ptr, int memsz, int fontsz);
 /* open a font by loading a precompiled glyphmap (see: dtx_save_glyphmap)
  * this works even when compiled without freetype support
  */
 struct dtx_font *dtx_open_font_glyphmap(const char *fname);
+/* same as dtx_open_font_glyphmap, but open from a memory buffer instead of a file */
+struct dtx_font *dtx_open_font_glyphmap_mem(void *ptr, int memsz);
 /* close a font opened by either of the above */
 void dtx_close_font(struct dtx_font *fnt);
 
@@ -127,6 +131,7 @@ int dtx_get_glyphmap_ptsize(struct dtx_glyphmap *gmap);
  */
 struct dtx_glyphmap *dtx_load_glyphmap(const char *fname);
 struct dtx_glyphmap *dtx_load_glyphmap_stream(FILE *fp);
+struct dtx_glyphmap *dtx_load_glyphmap_mem(void *ptr, int memsz);
 int dtx_save_glyphmap(const char *fname, const struct dtx_glyphmap *gmap);
 int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap);
 
