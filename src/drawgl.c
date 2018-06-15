@@ -31,6 +31,9 @@ static int num_quads;
 static dtx_user_draw_func user_draw_func;
 static void *user_cls;
 
+static int dtx_draw_init(void);
+static void cleanup(void);
+
 static void set_glyphmap_texture(struct dtx_glyphmap *gmap);
 static const char *drawchar(const char *str, float *pos_x, float *pos_y, int *should_flush);
 static void flush_user(void);
@@ -102,7 +105,7 @@ static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 
 void dtx_target_opengl(void)
 {
-	dtx_gl_init();
+	dtx_draw_init();
 	dtx_drawchar = drawchar;
 	dtx_drawflush = flush;
 
@@ -145,12 +148,8 @@ int dtx_gl_getopt(enum dtx_option opt, int *res)
 	return 0;
 }
 
-static int dtx_gl_init(void)
+static void dtx_gl_init(void)
 {
-	if(qbuf) {
-		return 0;	/* already initialized */
-	}
-
 #ifndef GL_VERSION_1_5
 	glBindBuffer = (PFNGLBINDBUFFERPROC)load_glfunc("glBindBuffer");
 #endif
@@ -159,19 +158,6 @@ static int dtx_gl_init(void)
 	glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC)load_glfunc("glDisableVertexAttribArray");
 	glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)load_glfunc("glVertexAttribPointer");
 #endif
-
-	if(!(qbuf = malloc(QBUF_SZ * sizeof *qbuf))) {
-		return -1;
-	}
-	num_quads = 0;
-
-	atexit(cleanup);
-	return 0;
-}
-
-static void cleanup(void)
-{
-	free(qbuf);
 }
 
 
@@ -303,8 +289,35 @@ static void set_glyphmap_texture_gl(struct dtx_glyphmap *gmap) {}
 
 #endif	/* !def NO_OPENGL */
 
+static int dtx_draw_init(void)
+{
+	if(qbuf) {
+		return 0;	/* already initialized */
+	}
+
+#ifndef NO_OPENGL
+	dtx_gl_init();
+#endif
+
+	if(!(qbuf = malloc(QBUF_SZ * sizeof *qbuf))) {
+		return -1;
+	}
+	num_quads = 0;
+
+	atexit(cleanup);
+	return 0;
+}
+
+static void cleanup(void)
+{
+	free(qbuf);
+}
+
+
 void dtx_target_user(dtx_user_draw_func func, void *cls)
 {
+	dtx_draw_init();
+
 	user_draw_func = func;
 	user_cls = cls;
 
@@ -402,4 +415,6 @@ static void flush_user(void)
 
 	user_draw_func((struct dtx_vertex*)qbuf, num_quads * 6, &pixmap, user_cls);
 	cur_gmap->udata = pixmap.udata;
+
+	num_quads = 0;
 }
