@@ -71,7 +71,7 @@ static void add_glyph(struct glyph *g, float x, float y);
 #endif	/* __APPLE__ */
 #endif	/* !TARGET_IPHONE */
 
-static int dtx_gl_init(void);
+static void dtx_gl_init(void);
 static void cleanup(void);
 static void flush(void);
 
