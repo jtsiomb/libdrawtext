@@ -136,7 +136,7 @@ void print_usage(const char *argv0)
 	printf("  -range <low>-<high>: unicode range (default: ascii)\n");
 	printf("  -dist: convert to distance field glyphmap\n");
 	printf("  -scale <factor>: scale the glyphmap by factor before saving it\n");
-	printf("  -pad <pixels>: padding to leave between glyphs\n");
+	printf("  -padding <pixels>: padding to leave between glyphs\n");
 	printf("  -o <filename>: output filename\n");
 	printf("  -help: print usage information and exit\n");
 }
