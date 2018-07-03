@@ -281,6 +281,7 @@ size_t dtx_utf8_from_string(const wchar_t *str, char *buf);
 
 /* ---- metrics ---- */
 float dtx_line_height(void);
+float dtx_baseline(void);
 
 /* rendered dimensions of a single glyph */
 void dtx_glyph_box(int code, struct dtx_box *box);

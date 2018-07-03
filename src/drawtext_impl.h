@@ -44,6 +44,7 @@ struct dtx_glyphmap {
 	int crange;
 
 	float line_advance;
+	float baseline;
 
 	struct glyph *glyphs;
 	struct dtx_glyphmap *next;

@@ -341,6 +341,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	gmap->cend = cend;
 	gmap->crange = cend - cstart;
 	gmap->line_advance = FTSZ_TO_PIXELS((float)face->size->metrics.height);
+	gmap->baseline = -FTSZ_TO_PIXELS((float)face->size->metrics.descender);
 
 	if(!(gmap->glyphs = malloc(gmap->crange * sizeof *gmap->glyphs))) {
 		free(gmap);
@@ -1079,6 +1080,13 @@ float dtx_line_height(void)
 	struct dtx_glyphmap *gmap = dtx_get_glyphmap(dtx_font, 0);
 
 	return gmap->line_advance;
+}
+
+float dtx_baseline(void)
+{
+	struct dtx_glyphmap *gmap = dtx_get_glyphmap(dtx_font, 0);
+
+	return gmap->baseline;
 }
 
 void dtx_glyph_box(int code, struct dtx_box *box)
