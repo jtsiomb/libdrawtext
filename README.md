@@ -25,7 +25,7 @@ Dependencies
 
 License
 -------
-Copyright (C) 2011-2016 John Tsiombikas <nuclear@member.fsf.org>  
+Copyright (C) 2011-2019 John Tsiombikas <nuclear@member.fsf.org>  
 You may freely use, modify and/or redistribute libdrawtext, under the terms of
 the GNU Lesser General Public License (LGPL) version 3 (or at your option, any
 later version published by the Free Software Foundation). See COPYING, and
@@ -33,7 +33,7 @@ COPYING.LESSER for details.
 
 Build
 -----
-To build and install `libdrawtext` on UNIX, run the usual:
+To build and install `libdrawtext` on UNIX or on Windows with MinGW, run:
 
     ./configure
     make
@@ -41,15 +41,16 @@ To build and install `libdrawtext` on UNIX, run the usual:
 
 See `./configure --help` for build-time options. 
 
-To build on windows, you may use the included visual studio project, or use
-mingw, in which case just follow the UNIX instructions above.
-
 To cross-compile for windows with mingw-w64, try the following incantation:
 
     ./configure --prefix=/usr/i686-w64-mingw32
     make CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-ar sys=mingw
     make install sys=mingw
 
+Previous versions of this library included a visual studio project file. As I'm
+not able to maintain it, I decided to remove it completely from this release.
+The only way it can return in future releases, is if someone steps up to
+maintain it. Send me an e-mail if you're interested.
 
 Contact
 -------
