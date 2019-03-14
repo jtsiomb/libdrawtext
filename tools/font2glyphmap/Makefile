@@ -5,7 +5,7 @@ obj = $(src:.c=.o)
 bin = font2glyphmap
 
 CFLAGS = -pedantic -Wall -g -I../../src
-LDFLAGS = -L../.. -Wl,-rpath=../.. -ldrawtext
+LDFLAGS = -L../.. -Wl,-rpath,../.. -ldrawtext
 
 sys := $(shell uname -s | sed 's/MINGW.*/mingw/')
 ifeq ($(sys), mingw)
