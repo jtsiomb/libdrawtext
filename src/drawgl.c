@@ -403,11 +403,12 @@ static void add_glyph(struct glyph *g, float x, float y)
 
 static void flush_user(void)
 {
-	if(!user_draw_func || !cur_gmap) {
+	struct dtx_pixmap pixmap;
+
+	if(!num_quads || !user_draw_func || !cur_gmap) {
 		return;
 	}
 
-	struct dtx_pixmap pixmap;
 	pixmap.pixels = cur_gmap->pixels;
 	pixmap.width = cur_gmap->xsz;
 	pixmap.height = cur_gmap->ysz;
