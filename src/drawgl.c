@@ -403,7 +403,7 @@ static void add_glyph(struct glyph *g, float x, float y)
 
 static void flush_user(void)
 {
-	if(!user_draw_func) {
+	if(!user_draw_func || !cur_gmap) {
 		return;
 	}
 
