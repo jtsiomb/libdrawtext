@@ -48,7 +48,17 @@ static void add_glyph(struct glyph *g, float x, float y);
 
 #ifdef TARGET_IPHONE
 #include <OpenGLES/ES2/gl.h>
-#else
+#ifndef GL_ES
+#define GL_ES
+#endif
+
+#elif defined(ANDROID)
+#include <GLES2/gl2.h>
+#ifndef GL_ES
+#define GL_ES
+#endif
+
+#else	/* regular OpenGL */
 
 #ifdef WIN32
 #include <windows.h>
@@ -56,7 +66,9 @@ static void add_glyph(struct glyph *g, float x, float y);
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
+
 #else
+
 #define GL_GLEXT_LEGACY		/* don't include glext.h internally in gl.h */
 #include <GL/gl.h>
 #ifndef NO_GLU
@@ -68,8 +80,12 @@ static void add_glyph(struct glyph *g, float x, float y);
 #include <GL/glx.h>
 #endif
 
-#endif	/* __APPLE__ */
+#endif	/* !__APPLE__ */
 #endif	/* !TARGET_IPHONE */
+
+#ifdef GL_ES
+#define GL_CLAMP GL_CLAMP_TO_EDGE
+#endif
 
 static void dtx_gl_init(void);
 static void cleanup(void);
@@ -80,6 +96,7 @@ static int tattr = -1;
 static int cattr = -1;
 static unsigned int font_tex;
 
+#ifndef GL_ES
 #ifndef GL_VERSION_1_5
 #define GL_ARRAY_BUFFER 0x8892
 #define GL_ARRAY_BUFFER_BINDING 0x8894
@@ -102,6 +119,7 @@ static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 #define load_glfunc(s)	glXGetProcAddress((unsigned char*)s)
 #endif
 
+#endif	/* !GL_ES */
 
 void dtx_target_opengl(void)
 {
@@ -150,6 +168,7 @@ int dtx_gl_getopt(enum dtx_option opt, int *res)
 
 static void dtx_gl_init(void)
 {
+#ifndef GL_ES
 #ifndef GL_VERSION_1_5
 	glBindBuffer = (PFNGLBINDBUFFERPROC)load_glfunc("glBindBuffer");
 #endif
@@ -158,6 +177,7 @@ static void dtx_gl_init(void)
 	glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC)load_glfunc("glDisableVertexAttribArray");
 	glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)load_glfunc("glVertexAttribPointer");
 #endif
+#endif	/* !GL_ES */
 }
 
 
