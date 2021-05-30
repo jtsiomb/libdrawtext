@@ -219,6 +219,9 @@ static void set_glyphmap_texture_gl(struct dtx_glyphmap *gmap)
 		gmap->tex_valid = 1;
 	}
 
+	if(font_tex != gmap->tex) {
+		dtx_flush();
+	}
 	font_tex = gmap->tex;
 }
 
