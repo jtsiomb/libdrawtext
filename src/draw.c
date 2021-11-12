@@ -45,6 +45,13 @@ void dtx_color(float r, float g, float b, float a)
 	dtx_cur_color_int[3] = a > 1.0 ? 255 : (int)(a * 255.0);
 }
 
+void dtx_draw_buffering(int mode)
+{
+	if(mode >= DTX_NBF && mode <= DTX_FBF) {
+		dtx_buf_mode = mode;
+	}
+}
+
 void dtx_string(const char *str)
 {
 	dtx_substring(str, 0, strlen(str));
