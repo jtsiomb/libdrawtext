@@ -136,7 +136,7 @@ size_t dtx_utf8_from_char_code(int code, char *buf)
 		}
 	}
 
-	if(!nbytes && buf) {
+	if(nbytes && buf) {
 		for(i=0; i<(int)nbytes; i++) {
 			int idx = nbytes - i - 1;
 			int mask, shift, prefix;
