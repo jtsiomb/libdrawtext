@@ -838,7 +838,7 @@ static struct dtx_glyphmap *load_glyphmap(struct io *io)
 
 		if(line[0] == '#') {
 			int c, res;
-			float x, y, xsz, ysz, orig_x, orig_y, adv, line_adv;
+			float x, y, xsz, ysz, orig_x, orig_y, adv, line_adv, baseline;
 			int ptsize;
 
 			if((res = sscanf(line + 1, " size: %d\n", &ptsize)) == 1) {
@@ -846,6 +846,9 @@ static struct dtx_glyphmap *load_glyphmap(struct io *io)
 
 			} else if((res = sscanf(line + 1, " advance: %f\n", &line_adv)) == 1) {
 				gmap->line_advance = line_adv;
+
+			} else if((res = sscanf(line + 1, " baseline: %f\n", &baseline)) == 1) {
+				gmap->baseline = baseline;
 
 			} else if((res = sscanf(line + 1, " %d: %fx%f+%f+%f o:%f,%f adv:%f\n",
 							&c, &xsz, &ysz, &x, &y, &orig_x, &orig_y, &adv)) == 8) {
@@ -998,6 +1001,7 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 	fprintf(fp, "P%d\n%d %d\n", opt_save_ppm ? 6 : 5, gmap->xsz, gmap->ysz);
 	fprintf(fp, "# size: %d\n", gmap->ptsize);
 	fprintf(fp, "# advance: %g\n", gmap->line_advance);
+	fprintf(fp, "# baseline: %g\n", gmap->baseline);
 	for(i=0; i<gmap->crange; i++) {
 		fprintf(fp, "# %d: %gx%g+%g+%g o:%g,%g adv:%g\n", g->code + gmap->cstart,
 				g->width, g->height, g->x, g->y, g->orig_x, g->orig_y, g->advance);
