@@ -13,7 +13,7 @@ ifeq ($(sys), Darwin)
 else ifeq ($(sys), mingw)
 	libgl = -lopengl32 -lglu32 -lfreeglut
 else
-	libgl = -lGL -lGLU -lglut
+	libgl = -lGL -lGLU -lglut -lm
 endif
 
 $(bin): $(obj) $(font)

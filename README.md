@@ -25,7 +25,7 @@ Dependencies
 
 License
 -------
-Copyright (C) 2011-2019 John Tsiombikas <nuclear@member.fsf.org>  
+Copyright (C) 2011-2023 John Tsiombikas <nuclear@member.fsf.org>  
 You may freely use, modify and/or redistribute libdrawtext, under the terms of
 the GNU Lesser General Public License (LGPL) version 3 (or at your option, any
 later version published by the Free Software Foundation). See COPYING, and
