@@ -764,7 +764,7 @@ static void *file_readline(void *buf, int bsz, struct io *io)
 
 static int mem_readchar(struct io *io)
 {
-	char *p = io->data;
+	unsigned char *p = io->data;
 
 	if(io->size-- <= 0) {
 		return -1;
@@ -776,7 +776,7 @@ static int mem_readchar(struct io *io)
 static void *mem_readline(void *buf, int bsz, struct io *io)
 {
 	int c;
-	char *ptr = buf;
+	unsigned char *ptr = buf;
 
 	while(--bsz > 0 && (c = mem_readchar(io)) != -1) {
 		*ptr++ = c;
