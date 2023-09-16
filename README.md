@@ -1,6 +1,8 @@
 libdrawtext
 ===========
 
+![GNU/Linux build status](https://github.com/jtsiomb/libdrawtext/actions/workflows/build_gnulinux.yml/badge.svg)
+
 About
 -----
 Libdrawtext is a simple library for fast anti-aliased text rendering in OpenGL.

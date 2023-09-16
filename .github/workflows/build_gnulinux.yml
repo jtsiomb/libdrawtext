@@ -1,0 +1,214 @@
+name: GNU/Linux build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install libgl-dev libglu1-mesa-dev libfreetype-dev
+
+    - name: configure
+      run: ./configure
+
+    - name: build
+      run: make
+
+    - name: save lib
+      uses: actions/upload-artifact@v3
+      with:
+        name: dtx-build
+        path: |
+          libdrawtext.so*
+          libdrawtext.a
+
+  build-noft:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install libgl-dev libglu1-mesa-dev
+
+    - name: configure
+      run: ./configure --disable-freetype
+
+    - name: build
+      run: make
+
+    - name: save lib
+      uses: actions/upload-artifact@v3
+      with:
+        name: dtx-noft-build
+        path: |
+          libdrawtext-noft.so*
+          libdrawtext-noft.a
+
+  font2glyphmap:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install libgl-dev libglu1-mesa-dev libfreetype-dev
+
+    - name: get build
+      uses: actions/download-artifact@v3
+      with:
+        name: dtx-build
+
+    - name: build
+      run: |
+        cd tools/font2glyphmap
+        make
+
+    - name: save font2glyphmap
+      uses: actions/upload-artifact@v3
+      with:
+        name: font2glyphmap
+        path: |
+          tools/font2glyphmap/font2glyphmap
+
+  example-simple:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install dependencies
+      run: |
+        sudo apt-get install libgl-dev libglu1-mesa-dev libfreetype-dev freeglut3-dev fonts-linuxlibertine
+
+    - name: get build
+      uses: actions/download-artifact@v3
+      with:
+        name: dtx-build
+
+    - name: build
+      run: |
+        mkdir examples/fonts
+        cd examples/fonts
+        ln -s /usr/share/fonts/opentype/linux-libertine/LinLibertine_R.otf linux-libertine.ttf
+        cd ../simple
+        make
+
+    - name: save simple example
+      uses: actions/upload-artifact@v3
+      with:
+        name: example-simple
+        path: |
+          examples/simple/simple
+          examples/simple/serif.ttf
+
+  example-nofreetype:
+    runs-on: ubuntu-latest
+    needs: [build, build-noft, font2glyphmap]
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install dependencies
+      run: |
+        sudo apt-get install libgl-dev libglu1-mesa-dev freeglut3-dev fonts-linuxlibertine
+
+    - name: get build
+      uses: actions/download-artifact@v3
+      with:
+        name: dtx-build
+
+    - name: get nofreetype build
+      uses: actions/download-artifact@v3
+      with:
+        name: dtx-noft-build
+
+    - name: get font2glyphmap
+      uses: actions/download-artifact@v3
+      with:
+        name: font2glyphmap
+
+    - name: prepare glyphmap
+      run: |
+        cd examples/nofreetype
+        ln -s /usr/share/fonts/opentype/linux-libertine/LinLibertine_R.otf serif.ttf
+        chmod +x ../../font2glyphmap
+        ../../font2glyphmap -size 24 -range 32-128 -o serif_s24.glyphmap
+
+    - name: build
+      run: |
+        cd examples/nofreetype
+        make
+        
+    - name: save nofreetype example
+      uses: actions/upload-artifact@v3
+      with:
+        name: example-noft
+        path: |
+          examples/nofreetype/simple-noft
+          examples/nofreetype/serif_s24.glyphmap
+
+  package:
+    runs-on: ubuntu-latest
+    needs: [build, build-noft, font2glyphmap, example-simple, example-nofreetype]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: get build
+      uses: actions/download-artifact@v3
+      with:
+        name: dtx-build
+
+    - name: get nofreetype build
+      uses: actions/download-artifact@v3
+      with:
+        name: dtx-noft-build
+
+    - name: get font2glyphmap
+      uses: actions/download-artifact@v3
+      with:
+        name: font2glyphmap
+
+    - name: get simple example
+      uses: actions/download-artifact@v3
+      with:
+        name: example-simple
+
+    - name: get simple example
+      uses: actions/download-artifact@v3
+      with:
+        name: example-noft
+
+    - name: stage
+      run: |
+        mkdir -p libdrawtext-gnulinux64/examples/simple
+        mkdir -p libdrawtext-gnulinux64/examples/nofreetype
+        mkdir -p libdrawtext-gnulinux64/tools/font2glyphmap
+        cp README.md COPYING* libdrawtext-gnulinux64
+        cp src/drawtext.h libdrawtext-gnulinux64
+        cp libdrawtext*.so* libdrawtext-gnulinux64
+        cp libdrawtext*.a libdrawtext-gnulinux64
+        cp font2glyphmap tools/font2glyphmap
+        cp simple libdrawtext-gnulinux64/examples/simple
+        cp serif.ttf libdrawtext-gnulinux64/examples/simple
+        cp simple-noft libdrawtext-gnulinux64/examples/nofreetype
+        cp serif_s24.glyphmap libdrawtext-gnulinux64/examples/nofreetype
+
+    - name: archive
+      uses: actions/upload-artifact@v3
+      with:
+        name: libdrawtext-gnulinux64
+        path: libdrawtext-gnulinux64
+
+# vi:ts=2 sts=2 sw=2 expandtab:
