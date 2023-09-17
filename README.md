@@ -2,6 +2,7 @@ libdrawtext
 ===========
 
 ![GNU/Linux build status](https://github.com/jtsiomb/libdrawtext/actions/workflows/build_gnulinux.yml/badge.svg)
+![Windows build status](https://github.com/jtsiomb/libdrawtext/actions/workflows/build_win_mingw.yml/badge.svg)
 
 About
 -----

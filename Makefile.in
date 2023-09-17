@@ -21,7 +21,6 @@ else ifeq ($(sys), mingw)
 	sodir = bin
 
 	libgl = -lopengl32 -lglu32
-	ft2_libs += -lpng -lz
 
 else
 	soname = $(name).so.$(abi)
