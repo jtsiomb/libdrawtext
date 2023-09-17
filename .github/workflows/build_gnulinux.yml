@@ -133,18 +133,6 @@ jobs:
       with:
         name: dtx-noft-build
 
-    - name: get font2glyphmap
-      uses: actions/download-artifact@v3
-      with:
-        name: font2glyphmap
-
-    - name: prepare glyphmap
-      run: |
-        cd examples/nofreetype
-        ln -s /usr/share/fonts/opentype/linux-libertine/LinLibertine_R.otf serif.ttf
-        chmod +x ../../font2glyphmap
-        ../../font2glyphmap -size 24 -range 32-128 -o serif_s24.glyphmap
-
     - name: build
       run: |
         cd examples/nofreetype
