@@ -4,7 +4,7 @@ root = ../..
 
 CC = gcc
 CFLAGS = -pedantic -Wall -g -I$(root)/src -I/usr/local/include
-LDFLAGS = -L$(root) -Wl,-rpath=$(root) -ldrawtext-noft $(libgl)
+LDFLAGS = -L$(root) -Wl,-rpath,$(root) -ldrawtext-noft $(libgl)
 
 font = serif.ttf
 

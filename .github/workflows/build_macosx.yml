@@ -90,7 +90,7 @@ jobs:
         mkdir -p examples/fonts
         cd examples/fonts
         wget http://downloads.sourceforge.net/project/linuxlibertine/linuxlibertine/5.1.3-2/LinLibertineTTF_5.1.3_2011_06_21.tgz
-        tar zvx LinLibertine_R.ttf -f LinLibertineTTF_5.1.3_2011_06_21.tgz
+        tar xzvf LinLibertineTTF_5.1.3_2011_06_21.tgz LinLibertine_R.ttf
         mv LinLibertine_R.ttf linux-libertine.ttf
 
     - name: get build

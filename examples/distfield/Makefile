@@ -3,7 +3,7 @@ bin = distfield
 root = ../..
 
 CFLAGS = -pedantic -Wall -g -I$(root)/src
-LDFLAGS = -L$(root) -Wl,-rpath=$(root) -ldrawtext -lfreetype $(libgl)
+LDFLAGS = -L$(root) -Wl,-rpath,$(root) -ldrawtext -lfreetype $(libgl)
 
 fonts = sans.ttf
 

@@ -3,7 +3,7 @@ bin = raster
 root = ../..
 
 CFLAGS = -pedantic -Wall -g -I$(root)/src -I/usr/local/include
-LDFLAGS = -L$(root) -Wl,-rpath=$(root) -ldrawtext -lfreetype
+LDFLAGS = -L$(root) -Wl,-rpath,$(root) -ldrawtext -lfreetype
 
 font = serif.ttf
 
