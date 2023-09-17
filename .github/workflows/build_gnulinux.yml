@@ -115,18 +115,13 @@ jobs:
 
   example-nofreetype:
     runs-on: ubuntu-latest
-    needs: [build, build-noft, font2glyphmap]
+    needs: build-noft
     steps:
     - uses: actions/checkout@v3
 
     - name: install dependencies
       run: |
-        sudo apt-get install libgl-dev libglu1-mesa-dev freeglut3-dev fonts-linuxlibertine
-
-    - name: get build
-      uses: actions/download-artifact@v3
-      with:
-        name: dtx-build
+        sudo apt-get install libgl-dev libglu1-mesa-dev freeglut3-dev
 
     - name: get nofreetype build
       uses: actions/download-artifact@v3
