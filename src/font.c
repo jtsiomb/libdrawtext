@@ -326,8 +326,8 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 #ifdef USE_FREETYPE
 	FT_Face face = fnt->face;
 	int i, j;
-	int gx, gy;
-	int total_width, max_width, max_height;
+	int gx, gy, ypos;
+	int total_width, max_width, max_height, max_orig_y;
 	int half_pad = opt_padding / 2;
 
 	FT_Set_Char_Size(fnt->face, 0, sz * 64, 72, 72);
@@ -349,17 +349,19 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 	}
 
 	total_width = opt_padding;
-	max_width = max_height = 0;
+	max_width = max_height = max_orig_y = 0;
 
 	for(i=0; i<gmap->crange; i++) {
-		int w, h;
+		int w, h, oy;
 
 		FT_Load_Char(face, i + cstart, 0);
 		w = FTSZ_TO_PIXELS(face->glyph->metrics.width);
 		h = FTSZ_TO_PIXELS(face->glyph->metrics.height);
+		oy = FTSZ_TO_PIXELS(face->glyph->metrics.height - face->glyph->metrics.horiBearingY);
 
 		if(w > max_width) max_width = w;
 		if(h > max_height) max_height = h;
+		if(oy > max_orig_y) max_orig_y = oy;
 
 		total_width += w + opt_padding;
 	}
@@ -396,8 +398,10 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 			gy += max_height + opt_padding;
 		}
 
+		ypos = gy + max_height - max_orig_y - FTSZ_TO_PIXELS(glyph->metrics.horiBearingY);
+
 		src = glyph->bitmap.buffer;
-		dst = gmap->pixels + (gy << gmap->xsz_shift) + gx;
+		dst = gmap->pixels + (ypos << gmap->xsz_shift) + gx;
 
 		for(j=0; j<(int)glyph->bitmap.rows; j++) {
 			memcpy(dst, src, glyph->bitmap.width);
@@ -407,7 +411,7 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 
 		gmap->glyphs[i].code = i;
 		gmap->glyphs[i].x = gx - half_pad;
-		gmap->glyphs[i].y = gy - half_pad;
+		gmap->glyphs[i].y = ypos;
 		gmap->glyphs[i].width = gwidth + half_pad * 2;
 		gmap->glyphs[i].height = gheight + half_pad * 2;
 		gmap->glyphs[i].orig_x = -FTSZ_TO_PIXELS((float)glyph->metrics.horiBearingX) + 1;
