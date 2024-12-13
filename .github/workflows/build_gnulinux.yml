@@ -23,7 +23,7 @@ jobs:
       run: make
 
     - name: save lib
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dtx-build
         path: |
@@ -47,7 +47,7 @@ jobs:
       run: make
 
     - name: save lib
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dtx-noft-build
         path: |
@@ -76,7 +76,7 @@ jobs:
         make
 
     - name: save font2glyphmap
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: font2glyphmap
         path: |
@@ -106,7 +106,7 @@ jobs:
         make
 
     - name: save simple example
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: example-simple
         path: |
@@ -134,7 +134,7 @@ jobs:
         make
         
     - name: save nofreetype example
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: example-noft
         path: |
@@ -189,7 +189,7 @@ jobs:
         cp serif_s24.glyphmap libdrawtext-gnulinux64/examples/nofreetype
 
     - name: archive
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: libdrawtext-gnulinux64
         path: libdrawtext-gnulinux64

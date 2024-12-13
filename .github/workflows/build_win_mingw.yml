@@ -25,7 +25,7 @@ jobs:
       run: mingw32-make
 
     - name: save lib
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dtx-build
         path: |
@@ -51,7 +51,7 @@ jobs:
       run: mingw32-make
 
     - name: save lib
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dtx-noft-build
         path: |
@@ -83,7 +83,7 @@ jobs:
         mingw32-make
 
     - name: save font2glyphmap
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: font2glyphmap
         path: |
@@ -122,7 +122,7 @@ jobs:
         mingw32-make
 
     - name: save simple example
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: example-simple
         path: |
@@ -154,7 +154,7 @@ jobs:
         mingw32-make
         
     - name: save nofreetype example
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: example-noft
         path: |
@@ -216,7 +216,7 @@ jobs:
         cp serif_s24.glyphmap libdrawtext-mingw32/examples/nofreetype
 
     - name: archive
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: libdrawtext-mingw32
         path: libdrawtext-mingw32
