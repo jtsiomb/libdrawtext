@@ -20,7 +20,7 @@ fonts/linux-libertine.ttf:
 
 fonts/sazanami-mincho.ttf:
 	mkdir -p fonts
-	wget -O sazanami-20040629.tar.bz2 'http://sourceforge.jp/frs/redir.php?m=iij&f=/efont/10087/sazanami-20040629.tar.bz2'
+	wget -O sazanami-20040629.tar.bz2 'https://src.fedoraproject.org/repo/extras/fonts-japanese/sazanami-20040629.tar.bz2/ceef10579a75c92483171f3bd7f77df2/sazanami-20040629.tar.bz2'
 	tar xjvf sazanami-20040629.tar.bz2
 	rm -f sazanami-20040629.tar.bz2
 	cp sazanami-20040629/sazanami-mincho.ttf $@
@@ -28,7 +28,7 @@ fonts/sazanami-mincho.ttf:
 
 fonts/klingon.ttf:
 	mkdir -p fonts
-	wget https://msdnshared.blob.core.windows.net/media/MSDNBlogsFS/prod.evol.blogs.msdn.com/CommunityServer.Components.PostAttachments/00/10/42/00/93/pIqaD%20Font.zip
+	wget https://web.archive.org/web/20201112091916/https://msdnshared.blob.core.windows.net/media/MSDNBlogsFS/prod.evol.blogs.msdn.com/CommunityServer.Components.PostAttachments/00/10/42/00/93/pIqaD%20Font.zip
 	unzip -o 'pIqaD Font.zip'
 	rm -f 'pIqaD Font.zip'
 	cp 'pIqaD Font/pIqaD.ttf' $@
