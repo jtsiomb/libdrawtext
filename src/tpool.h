@@ -2,17 +2,12 @@
  * author: John Tsiombikas <nuclear@member.fsf.org>
  * This code is public domain.
  */
-#ifndef THREADPOOL_H_
-#define THREADPOOL_H_
+#pragma once
 
 struct dtx_thread_pool;
 
 /* type of the function accepted as work or completion callback */
 typedef void (*dtx_tpool_callback)(void*);
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* if num_threads == 0, auto-detect how many threads to spawn */
 struct dtx_thread_pool *dtx_tpool_create(int num_threads);
@@ -53,9 +48,3 @@ long dtx_tpool_timedwait(struct dtx_thread_pool *tpool, long timeout);
  * individual cores in multi-core processors are counted as processors.
  */
 int dtx_tpool_num_processors(void);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif	/* THREADPOOL_H_ */

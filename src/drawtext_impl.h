@@ -15,8 +15,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef DRAWTEXT_IMPL_H_
-#define DRAWTEXT_IMPL_H_
+#pragma once
 
 #include "drawtext.h"
 
@@ -87,5 +86,3 @@ int dtx_gl_setopt(enum dtx_option opt, int val);
 int dtx_gl_getopt(enum dtx_option opt, int *ret);
 int dtx_rast_setopt(enum dtx_option opt, int val);
 int dtx_rast_getopt(enum dtx_option opt, int *ret);
-
-#endif	/* DRAWTEXT_IMPL_H_ */

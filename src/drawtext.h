@@ -15,8 +15,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef LIBDRAWTEXT_H_
-#define LIBDRAWTEXT_H_
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,10 +40,6 @@ struct dtx_box {
 	float x, y;
 	float width, height;
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Open a truetype/opentype/whatever font.
  *
@@ -300,9 +295,3 @@ float dtx_string_height(const char *str);
 float dtx_char_pos(const char *str, int n);
 
 int dtx_char_at_pt(const char *str, float pt);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif	/* LIBDRAWTEXT_H_ */

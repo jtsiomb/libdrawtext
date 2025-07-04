@@ -50,7 +50,6 @@ static int opt_save_ppm;
 
 static struct dtx_glyphmap *load_glyphmap(struct io *io);
 
-#ifdef USE_FREETYPE
 static int init_freetype(void);
 static void cleanup(void);
 
@@ -81,7 +80,6 @@ static void cleanup(void)
 		FT_Done_FreeType(ft);
 	}
 }
-#endif	/* USE_FREETYPE */
 
 static int find_pow2(int x);
 
@@ -89,7 +87,6 @@ struct dtx_font *dtx_open_font(const char *fname, int sz)
 {
 	struct dtx_font *fnt = 0;
 
-#ifdef USE_FREETYPE
 	init_freetype();
 
 	if(!(fnt = calloc(1, sizeof *fnt))) {
@@ -111,9 +108,6 @@ struct dtx_font *dtx_open_font(const char *fname, int sz)
 			dtx_use_font(fnt, sz);
 		}
 	}
-#else
-	fprintf(stderr, "ignoring call to dtx_open_font: not compiled with freetype support!\n");
-#endif
 
 	return fnt;
 }
@@ -122,7 +116,6 @@ struct dtx_font *dtx_open_font_mem(void *ptr, int memsz, int fontsz)
 {
 	struct dtx_font *fnt = 0;
 
-#ifdef USE_FREETYPE
 	FT_Open_Args args;
 
 	init_freetype();
@@ -151,9 +144,6 @@ struct dtx_font *dtx_open_font_mem(void *ptr, int memsz, int fontsz)
 			dtx_use_font(fnt, fontsz);
 		}
 	}
-#else
-	fprintf(stderr, "ignoring call to dtx_open_font_mem: not compiled with freetype support!\n");
-#endif
 
 	return fnt;
 }
@@ -323,7 +313,6 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 {
 	struct dtx_glyphmap *gmap = 0;
 
-#ifdef USE_FREETYPE
 	FT_Face face = fnt->face;
 	int i, j;
 	int gx, gy, ypos;
@@ -428,7 +417,6 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 
 	/* add it to the glyphmaps list of the font */
 	dtx_add_glyphmap(fnt, gmap);
-#endif	/* USE_FREETYPE */
 
 	return gmap;
 }
@@ -1271,7 +1259,6 @@ struct dtx_glyphmap *dtx_proc_char(int code, float *xpos, float *ypos)
 	return gmap;
 }
 
-#ifdef USE_FREETYPE
 static int calc_best_size(int total_width, int max_gwidth, int max_gheight, int padding, int pow2, int *imgw, int *imgh)
 {
 	int xsz, ysz, num_rows;
@@ -1322,7 +1309,6 @@ static int next_pow2(int x)
 	x = (x >> 16) | x;
 	return x + 1;
 }
-#endif
 
 static int find_pow2(int x)
 {
