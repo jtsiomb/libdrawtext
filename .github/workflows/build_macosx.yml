@@ -84,6 +84,7 @@ jobs:
     - name: install dependencies
       run: |
         brew install freetype
+        brew link freetype
 
     - name: download font
       run: |
