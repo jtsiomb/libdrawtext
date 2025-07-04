@@ -66,7 +66,7 @@ jobs:
         sudo apt-get install libgl-dev libglu1-mesa-dev libfreetype-dev
 
     - name: get build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-build
 
@@ -93,7 +93,7 @@ jobs:
         sudo apt-get install libgl-dev libglu1-mesa-dev libfreetype-dev freeglut3-dev fonts-linuxlibertine
 
     - name: get build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-build
 
@@ -124,7 +124,7 @@ jobs:
         sudo apt-get install libgl-dev libglu1-mesa-dev freeglut3-dev
 
     - name: get nofreetype build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-noft-build
 
@@ -149,27 +149,27 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: get build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-build
 
     - name: get nofreetype build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-noft-build
 
     - name: get font2glyphmap
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: font2glyphmap
 
     - name: get simple example
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: example-simple
 
     - name: get simple example
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: example-noft
 

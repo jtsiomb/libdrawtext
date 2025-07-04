@@ -73,7 +73,7 @@ jobs:
         install: mingw-w64-i686-gcc mingw-w64-i686-make mingw-w64-i686-freetype
 
     - name: get build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-build
 
@@ -112,7 +112,7 @@ jobs:
         mv LinLibertine_R.ttf linux-libertine.ttf
 
     - name: get build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-build
 
@@ -144,7 +144,7 @@ jobs:
         install: mingw-w64-i686-gcc mingw-w64-i686-make mingw-w64-i686-freeglut
 
     - name: get nofreetype build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-noft-build
 
@@ -176,27 +176,27 @@ jobs:
         msystem: MINGW32
 
     - name: get build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-build
 
     - name: get nofreetype build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dtx-noft-build
 
     - name: get font2glyphmap
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: font2glyphmap
 
     - name: get simple example
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: example-simple
 
     - name: get simple example
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: example-noft
 
