@@ -12,7 +12,7 @@ ifeq ($(sys), mingw)
 	LDFLAGS += -lopengl32 -lglu32 -lfreetype
 endif
 
-$(bin): $(obj) $(font)
+$(bin): $(obj) $(font) ../../libdrawtext.so
 	$(CC) -o $@ $(obj) $(LDFLAGS)
 
 .PHONY: clean

@@ -399,6 +399,11 @@ struct dtx_glyphmap *dtx_create_glyphmap_range(struct dtx_font *fnt, int sz, int
 		}
 
 		ypos = gy + max_height - max_orig_y - FTSZ_TO_PIXELS(glyph->metrics.horiBearingY);
+		if(ypos < 0) {
+			fprintf(stderr, "dtx_create_glyphmap_range: clamping negative y offset for glyph %d (%c)\n",
+					gmap->cstart + i, isprint(gmap->cstart + i) ? (char)(gmap->cstart + i) : '?');
+			ypos = 0;
+		}
 
 		src = glyph->bitmap.buffer;
 		dst = gmap->pixels + (ypos << gmap->xsz_shift) + gx;
@@ -1007,7 +1012,7 @@ int dtx_save_glyphmap_stream(FILE *fp, const struct dtx_glyphmap *gmap)
 	fprintf(fp, "# advance: %g\n", gmap->line_advance);
 	fprintf(fp, "# baseline: %g\n", gmap->baseline);
 	for(i=0; i<gmap->crange; i++) {
-		fprintf(fp, "# %d: %gx%g+%g+%g o:%g,%g adv:%g\n", g->code + gmap->cstart,
+		fprintf(fp, "# %d: %gx%g%+g%+g o:%g,%g adv:%g\n", g->code + gmap->cstart,
 				g->width, g->height, g->x, g->y, g->orig_x, g->orig_y, g->advance);
 		g++;
 	}
